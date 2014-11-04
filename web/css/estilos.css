@@ -1,0 +1,238 @@
+/* CSS Document */
+body
+{
+background-color:#fff;
+font-size:11px;
+font-family:Verdana, Arial, Helvetica, sans-serif;
+padding: 0px;
+margin: 0px;
+}
+a{
+text-decoration: none;
+}
+div#contenido
+{
+    display: block;
+    overflow: hidden;
+    margin-top: 50px;
+    width: 347px;    
+    margin-left:auto;
+    margin-right:auto; 
+    text-align: center;
+    
+}
+div#contenido_login
+{
+    display: block;
+    overflow: hidden;    
+    width: 308px; 
+    height:145px;   
+    margin-left:auto;
+    margin-right:auto; 
+    text-align: center;
+    
+    
+}
+div#contenido_registro
+{
+    display: block;
+    overflow: hidden;    
+    width: 336px;    
+    height:205px;
+    margin-left:auto;
+    margin-right:auto; 
+    text-align: center;
+    display: none;
+    
+    
+    
+}
+div#txt_inicio
+{
+    display: block;
+    overflow:hidden;
+    text-align: center;
+    color: #000;
+    margin-top: 85px;
+    font-size: 24px;
+}
+div#logos
+{
+    display: block;
+    overflow: hidden;
+    margin-top: 35px;
+    text-align: center;
+}
+
+div#header
+{
+display: block;
+overflow: hidden;
+width: 100%;
+height: 90px;
+border-bottom: 1px solid #fff;
+background: transparent url(../img/header_map.gif) no-repeat;
+}
+div#logo
+{
+	height: 66px;
+	width: 500px;
+    float: left;
+    margin-left: 20px;
+    font-size: 20px;
+    font-family:"Lucida Sans";       
+    color: #EE2D21;
+    margin-top: 24px;
+    text-shadow: 4px 4px #ccc;	
+    background: transparent url(../img/header_truck.png) no-repeat;   
+    
+}
+div#info
+{
+    float: right;
+    margin-right: 35px;
+    font-size: 12px;
+    color: #000;
+    font-weight: bold;
+    margin-top: 15px;
+    overflow: hidden;
+}
+
+div#name
+{
+    float: right;
+    margin-top: 4px;
+    overflow: hidden;
+    margin-right: 5px;
+    font-style:italic;
+    padding: 3px;
+}
+div#exit
+{
+    float: right;
+    overflow: hidden;
+    
+}
+
+div#content
+{
+    display: block;    
+    width: 100%;    
+    overflow: hidden;
+}
+.iconEstacion
+{
+    background: url(../img/estaciones.png) 0px 0px no-repeat !important;
+}
+.iconTransporte
+{
+    background: url(../img/transportes.png) 0px 0px no-repeat !important;
+}
+.iconRutas
+{
+    background: url(../img/rutas.png) 0px 0px no-repeat !important;
+}
+.iconResultados
+{
+    background: url(../img/resultados.png) 0px 0px no-repeat !important;
+}
+.iconImportar
+{
+    background: url(../img/importar.png) 0px 0px no-repeat !important;
+}
+.iconExportar
+{
+    background: url(../img/exportar.png) 0px 0px no-repeat !important;
+}
+.iconNuevo
+{
+    background: url(../img/nuevo.png) 0px 0px no-repeat !important;
+}
+.iconBorrar
+{
+    background: url(../img/delete.png) 0px 0px no-repeat !important;
+}
+.campoDeshabilitado
+{
+    background-color:#EDE6E6;
+    background-image: none;
+}
+.resaltado
+{
+    font-weight: bold;
+    color: #000;
+    font-size:14px;
+      font-family:Verdana;
+}
+.x-grid3-col-pasos
+{
+      font-weight: bold;
+      color: red;
+      font-size: 12px;
+}
+
+.x-grid3-row td, .x-grid3-summary-row td {
+    font: 11px Verdana,tahoma,helvetica,sans-serif;
+}
+.x-grid3-row td, .x-grid3-summary-row td {
+    font: 11px Verdana,tahoma,helvetica,sans-serif;
+}
+.x-grid3-row-selected {
+    background-color: #F9D14D !important;
+    border: 1px dotted #CCCCCC;
+}
+
+.x-tab-strip span.x-tab-strip-text {
+    color: #333;
+}
+.x-tab-strip-active span.x-tab-strip-text {
+    color: #FFFFFF;
+}
+
+.x-grid3-row {
+    border-color: #FFFFFF #EDEDED #EDEDED;
+    cursor: pointer;
+}
+
+.x-grid3-row-over {
+    border-color:#ddd;
+    background-color: #F7E8B9; 
+    /*background-color:#efefef;*/
+   
+}
+.pulse
+{
+    color:#647890;
+    font-size:12px;
+    font-family:verdana;
+    font-weight: bold;   
+}
+.capa_no_editable
+{    
+    padding: 20px;
+    border:1px solid #fff;
+}
+#boton_buscar button
+{
+
+    color: #333333;
+    font: 11px arial,tahoma,verdana,helvetica;
+    
+}
+#boton_buscar button:hover
+{
+ color: #fff;   
+}
+.icoOK
+{
+  background:transparent url(../img/ok.png) no-repeat;     
+}
+
+.icoFail
+{
+  background:transparent url(../img/fail.png) no-repeat;     
+}
+.icoHelp
+{
+  background:transparent url(../img/help.png) no-repeat;     
+}

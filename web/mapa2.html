@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Callejero OpenFleetServices</title>
+
+    <link rel="stylesheet" href="OpenLayers/theme/default/style.css" type="text/css">
+    <link rel="stylesheet" href="css/style.css" type="text/css">
+    <link rel="stylesheet" href="extjs/resources/css/ext-all.css" type="text/css"></link>
+
+    <script src="OpenLayers/OpenLayers.js" type="text/javascript"></script>
+    <script src="extjs/adapter/ext/ext-base.js" type="text/javascript"></script>
+    <script src="extjs/ext-all.js"  type="text/javascript"></script>
+    <script src="GeoExt/lib/GeoExt.js" type="text/javascript"></script>
+
+    <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBZWy7pS-g4PggB7yUWHHF41s4-8CeivK8&sensor=true" type="text/javascript"></script>
+    
+    <script type="text/javascript">
+
+        //Variables para el control y visualización del mapa
+        var map, layer;
+        var controlNavigation = new OpenLayers.Control.Navigation();
+        //var controlMouse = new OpenLayers.Control.MousePosition();
+        var centerPoint = new OpenLayers.LonLat(-667100.61351, 4493902.57785);
+
+        //Iconos para marcas en el mapa:
+        var size = new OpenLayers.Size(25,41);
+        var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+
+        var arrPopUps = [];
+        var actualIcon;
+        var iconHome = new OpenLayers.Icon('img/home.png', size, offset);
+        var iconStation = new OpenLayers.Icon('img/station.png', size, offset);
+        var iconTruck = new OpenLayers.Icon('img/truck.png', size, offset);
+
+        var arrMarkers = [];
+        var markers = new OpenLayers.Layer.Markers( "Markers" );
+
+        var toolbarItems = [];
+        
+ 		/*
+ 		 * Formulario busqueda mapa 
+ 		 * 
+ 		 * */
+        var direccion = new Ext.form.TextField({   
+		    fieldLabel:'Dirección',   
+		    name:'direccion',   
+		    emptyText:'Dirección...',   
+		    id:"direccion",
+		    width: '300px'
+		});
+		        
+		var searchbutton = new  Ext.Button ({
+		    text: 'Buscar',
+		    handler: function() {
+		        showAddress(null);
+		    },
+		    style: 'padding-left: 20px;'
+		});
+
+		var searchform = new Ext.FormPanel({
+			layout : {
+       	 		type : 'table',
+        		columns : 2
+    		},
+			frame : true,
+			defaults : {
+				xtype : 'textfield'
+			},
+			items : [direccion, searchbutton]	
+		});
+
+		//INICIALIZADOR DEL MAPA
+        Ext.onReady(function(){
+        	
+        	toolbarItems.push(searchform);
+        	
+            map = new OpenLayers.Map();
+
+            layer = new OpenLayers.Layer.OSM({name: 'OSM Map', attribution: 'asd'});
+            
+            map.addControl(controlNavigation); 
+
+            map.addLayer(layer);
+            map.addLayer(markers);
+
+            mapPanel = new GeoExt.MapPanel({
+                renderTo: 'mapa',
+                height: 550,
+                width: 750,
+                map: map,
+                title: 'Callejero',
+                center: centerPoint,
+                zoom: 12,
+                layers: [layer, markers],
+                tbar : toolbarItems
+            }); 
+            
+        }); 
+
+		//Registra un punto sobre el mapa con el icono que se pasa como parámetro.
+        function registerPoint(map, icon) {
+            changeIconType(icon);
+            map.events.register('click', map, function(e) {
+            	var xys = map.getLonLatFromViewPortPx(e.xy);
+	        	var marker = new OpenLayers.Marker(xys,actualIcon.clone());
+	            creaElementosMapa(marker);
+	            showAddress(marker);
+            });
+        }
+		
+		//Elimina un punto del mapa.
+        function unRegisterPoint(map) {
+            map.events.unregister('click', map, registerClick);
+        }
+		
+		//Función que se encarga de manejar los clicks sobre el mapa.
+        function registerClick(e) {
+            var xys = map.getLonLatFromViewPortPx(e.xy);
+        	var marker = new OpenLayers.Marker(xys,actualIcon.clone());
+            creaElementosMapa(marker);
+            showAddress(marker);
+        }
+        
+        function creaElementosMapa(marker) {
+            markers.addMarker(marker);
+            marker.id = arrMarkers.length;
+            arrMarkers[arrMarkers.length] = marker;
+			marker.point = new OpenLayers.Geometry.Point(marker.lonlat.lon, marker.lonlat.lat);
+        }
+        
+		//Función que cambia el icono actual de las marcas por el que se pasa como parámetro.
+        function changeIconType(icon) {
+            actualIcon = icon;
+        }
+
+		//Función encargada de registrar los clicks sobre las marcas del mapa y mostrar un popup informativo.
+        function registerMoseOverMark(marker) {
+            marker.events.register('click', marker, function() {
+                var popup = new OpenLayers.Popup.FramedCloud(marker.id,
+                    marker.lonlat,
+                    null,
+                    '<div><p><h3>Estación ' + marker.id + '</h3></p>'
+                    	+ '<br /> Lon: ' + marker.lonlat.lat + '<br />Lat: ' + marker.lonlat.lon + '</div><br />'
+                   		+ '<div>Dirección: ' + marker.direccion + '</div>'
+                   		+ '<div style:"padding-top:20px; font-size: 10px;"><a href="javascript:removeMP(' + marker.id + ');">Eliminar</a></div>',
+                    null,
+                    true
+                );
+                map.addPopup(popup);
+                marker.popup = popup;
+            });
+            
+        }
+        
+        //Función encargada de eliminar una marca del mapa.
+        function removeMP(idM) {
+            markers.removeMarker(arrMarkers[idM]);
+            arrMarkers[idM].popup.destroy();
+            arrMarkers[idM].destroy();
+            arrMarkers[idM] = null;
+        }
+
+		//Función que elimina todas las marcas actuales del mapa.
+        function limpiarMapa() {
+            for (var i = 0; i < arrMarkers.length; i++) {
+                if(arrMarkers[i] != null) {
+                    markers.removeMarker(arrMarkers[i]);
+                    arrMarkers[i].destroy();
+                }
+            }
+            arrMarkers = [];
+        }
+
+        /************************************************
+                        JSON
+                Pruebas con GeoJSON
+        ************************************************/
+
+        var geoJSONText;
+        var geoJSON = new OpenLayers.Format.GeoJSON();
+
+        function convertirJSON() {
+            var contentId = document.getElementById("json");
+            var points = new OpenLayers.Geometry.MultiPoint();
+
+            for (var i = 0; i < arrPoints.length; i++) {
+                if(arrPoints[i] != null) {
+                    points.addPoint(arrPoints[i]);
+                }
+            }
+            geoJSONText = geoJSON.write(points, true);
+            contentId.innerHTML = geoJSONText;
+        }
+
+        function pintarPuntos() {
+            var points = geoJSON.read(geoJSONText, 'Geometry');
+
+            for (var i = 0; i < points.getLength(); i++) {
+                var latLon = new OpenLayers.LonLat(points[i].x. points[i].y);
+                var marker = new OpenLayers.Marker(latLon,actualIcon.clone());
+                markers.addMarker(marker);
+                marker.id = arrMarkers.length;
+                arrMarkers[arrMarkers.length] = marker;
+                registerMoseOverMark(marker);
+            };
+        }
+        
+        /**
+         * GEOCODER
+         * */
+		var geocoder;
+
+		function showAddress(markerIn) {
+			var proj = new OpenLayers.Projection("EPSG:4326");
+			geocoder = new google.maps.Geocoder();
+			var marker;
+			
+			if (geocoder) {
+			
+				if (markerIn) { //si queremos una dirección a partir de unas coordenadas cartográficas
+					var latlongFormatGoogle = new OpenLayers.LonLat(markerIn.lonlat.lon, markerIn.lonlat.lat); 
+					latlongFormatGoogle.transform(map.getProjectionObject(), proj);
+					
+					var locationGMaps = new google.maps.LatLng(latlongFormatGoogle.lat, latlongFormatGoogle.lon);
+					geocoder.geocode({ 'latLng': locationGMaps}, function(points, status) {
+						markerIn.direccion = points[0].formatted_address;
+					});
+					
+					registerMoseOverMark(markerIn);
+					
+				} else { //si queremos unas coordenadas a partir de una dirección
+					geocoder.geocode({ 'address': Ext.getCmp('direccion').getValue()}, function(points, status) {
+						if (!points && !(status == google.maps.GeocoderStatus.OK)) {
+							alert(Ext.getCmp('direccion').getValue() + "Dirección no encontrada.");
+							return;
+						} else {
+							
+							var centerPoint = new OpenLayers.LonLat(points[0].geometry.location.lng(), 
+								points[0].geometry.location.lat());
+								
+							changeIconType(iconStation);
+							
+							map.setCenter(centerPoint.transform(proj, map.getProjectionObject()), 15);
+							marker = new OpenLayers.Marker(centerPoint, actualIcon.clone());
+							marker.direccion =  points[0].formatted_address;
+        					creaElementosMapa(marker);
+							
+							registerMoseOverMark(marker);
+						}
+					});
+				}
+			}
+		}
+		
+		/*
+		 *
+		 * Array de puntos que simula los recogidos de BD
+		 *  
+		 * */
+		
+		function leerPuntos() {
+        	var arrEntrada = [];
+        	var estacion = new Object;
+            
+            estacion.nombre = 'Estacion PEPE';
+            estacion.id_estaciones = 0;
+            estacion.lat = -664938.87880412;
+            estacion.lon = 4492658.0874834;
+            estacion.direccion = 'Calle Luis de Morales 33, Sevilla';
+            estacion.activo = true;
+            
+            arrEntrada.push(estacion);
+            estacion = new Object;
+
+            estacion.nombre = 'Estacion MANUEL';
+            estacion.id_estaciones = 1;
+            estacion.lat = -662710.26169849;
+            estacion.lon = 4492328.452799;
+            estacion.direccion = 'Calle Carlos Marx 1, Sevilla';
+            estacion.activo = true;
+            
+            arrEntrada.push(estacion);
+            
+            return arrEntrada;
+		}
+		
+		function representaPuntos() {
+			var arr = leerPuntos();
+			var coleccionPuntos;
+			var arrPoints = [];
+			
+			changeIconType(iconStation);
+			
+			for (var i = 0; i < arr.length; i++) {
+				var latLon = new OpenLayers.LonLat(arr[i].lon, arr[i].lat);
+				var punto = new OpenLayers.Geometry.Point(arr[i].lon, arr[i].lat);
+				
+				arrPoints.push(punto);
+				creaElementosMapa(latLon);
+			}
+			coleccionPuntos = new OpenLayers.Geometry.Collection(arrPoints);
+			
+			map.setCenter(coleccionPuntos.getCentroid(), 12);
+		}
+
+    </script>
+  </head>
+  <body>
+    <div id="contenedor">
+        <div id="mapa"></div>
+
+        <div id ="controles">
+            <a href="javascript:registerPoint(map, iconStation);">
+            	<div id="adds">Registrar Paradas <img src="img/station.png" style="vertical-align:middle;"></div>
+        	</a><br /><br/>
+            <a href="javascript:registerPoint(map, iconHome);">
+            		<div id="adds">Registrar Transporte <img src="img/home.png" style="vertical-align:middle;"></div>
+            </a>
+            <br /><br /><br /><br /><br />
+            <a href="javascript:unRegisterPoint(map);">
+            		<div id="adds">Finalizar registros</div>
+            </a><br /><br />
+            <a href="javascript:limpiarMapa();">
+            		<div id="adds">Limpiar</div>
+            </a><br /><br />
+            <a href="javascript:convertirJSON();">
+            		<div id="adds">Convertir JSON</div>
+            </a><br /><br />
+            <a href="javascript:representaPuntos();">
+            		<div id="adds">Representar Puntos</div>
+            </a><br /><br />
+        </div>
+    </div>
+    <div id ="json">
+    </div>    
+    <div id ="points">
+    	<input type="hidden" name="lat" id="lat"/>
+		<input type="hidden" name="lng" id="long"/>	
+    </div>
+  </body>
+</html>
