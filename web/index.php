@@ -10,9 +10,12 @@ session_destroy();
 <link rel="stylesheet" type="text/css" href="extjs/resources/css/xtheme-slate.css" />  
 <link rel="stylesheet" type="text/css" href="css/estilos.css">
 
+
 <script type="text/javascript" src="extjs/adapter/ext/ext-base.js"></script>
 <script type="text/javascript" src="extjs/ext-all-debug.js"></script>
+
 <script type="text/javascript" src="extjs/locale/ext-lang-es.js"></script>
+
 <script language="javascript" src="js/inicio.js"></script>
 </head>    
     <body>            
@@ -20,11 +23,11 @@ session_destroy();
               <div id="contenido_login"></div>
               <div id="contenido_registro"></div>
           </div>
-          <div id="txt_inicio">Proyecto cofinanciado por:</div>
+          <!--div id="txt_inicio">Proyecto cofinanciado por:</div>
           <div id="logos">
               <img src="img/andaluciasemueve.jpg">
               <img src="img/ministerio_DGIPYME.jpg">
               <img src="img/feder2012.gif">
-          </div>      
+          </div-->      
     </body>
 </html>
