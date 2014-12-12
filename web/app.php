@@ -26,12 +26,22 @@ $user=$user->get($id);
 <script type="text/javascript" src="extjs/adapter/ext/ext-base.js"></script>
 <script type="text/javascript" src="extjs/ext-all-debug.js"></script>
 <script type="text/javascript" src="extjs/locale/ext-lang-es.js"></script>
+<script type="text/javascript" src="extjs/examples/ux/GroupSummary.js"></script>
 <script type="text/javascript" src="OpenLayers/OpenLayers.js" ></script>
 <script type="text/javascript" src="GeoExt/lib/GeoExt.js"></script>
 <link rel="stylesheet" type="text/css" href="GeoExt/resources/css/geoext-all-debug.css"></link>
 
-<script language="javascript" src="js/app.js"></script>
+
+
 <script src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBZWy7pS-g4PggB7yUWHHF41s4-8CeivK8&sensor=true" type="text/javascript"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+
+<script src= "smc.viewer-bundle.js"></script>
+<script language="javascript" src="js/app.js"></script>
+<link rel="stylesheet" href="css/leaflet.css" />
+<link rel="stylesheet" href="css/MarkerCluster.css" />
+<link rel="stylesheet" href="css/MarkerCluster.Default.css" />
+
 
 </head>
     
@@ -52,7 +62,7 @@ $user=$user->get($id);
              </div>
          </div>
          <div id="content">
-             
+          
          </div>
        
     </body>

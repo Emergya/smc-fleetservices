@@ -75,16 +75,16 @@ background: transparent url(../img/header_map.gif) no-repeat;
 }
 div#logo
 {
-	height: 66px;
+	height:90px;
 	width: 500px;
     float: left;
     margin-left: 20px;
     font-size: 20px;
     font-family:"Lucida Sans";       
     color: #EE2D21;
-    margin-top: 24px;
+    margin-top: 0;
     text-shadow: 4px 4px #ccc;	
-    background: transparent url(../img/header_truck.png) no-repeat;   
+    background: transparent url(../img/smc_logo.png) no-repeat ;   
     
 }
 div#info

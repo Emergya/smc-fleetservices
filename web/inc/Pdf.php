@@ -97,9 +97,9 @@ class Pdf extends FPDF
       	  $euro = iconv('UTF-8', 'windows-1252', '€');
 		     
       	  $recorrido=utf8_decode($v['inicio']  .  "\na\n" . $v['fin']);
-      	  $hora=date("d/m/yy",$v['hora']) . "\n" . date("H:i",$v['hora']) . " h";
-		  $coste=$v['coste'] .  " " . $euro;
-		  $distancia=$v['distancia'] . " km";		            		       	   
+      	  $hora=date("d/m/Y",$v['hora']) . "\n" . date("H:i",$v['hora']) . " h";
+		  $coste=round($v['coste'], 2) .  " " . $euro;
+		  $distancia=round($v['distancia'], 2) . " km";		            		       	   
           $this->SetTextColor(0,0,0);
 		  
 		 

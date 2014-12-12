@@ -9,7 +9,10 @@ class Ut {
     private $id_usuario = 0; // id del usuario de la unidad de transporte
     private $activo=false;
     private $costeXkm=0.0;
-    private $costeXdia=0.0;  
+    private $costeXdia=0.0; 
+    private $tipo = "";
+    private $tonelaje = 0.0; 
+    private $norma = "";
    
 	private $bd; // Conexion a base de datos
 	
@@ -35,6 +38,16 @@ class Ut {
     function getCosteXdia()
     {
         return $this->costeXdia;
+    }
+
+     function getTipo()
+    {
+        return $this->tipo;
+    }
+
+     function getTonelaje()
+    {
+        return $this->tonelaje;
     }
     
     function getId()
@@ -64,7 +77,10 @@ class Ut {
              $this->costeXkm=$res[0]['coste_x_km'];
              $this->costeXdia=$res[0]['coste_x_dia'];
              $this->id=$res[0]['id_transportes'];        
-             $this->activo=$res[0]['activo'];                                                 			
+             $this->activo=$res[0]['activo']; 
+             $this->tipo=$res[0]['tipo']; 
+             $this->tonelaje=$res[0]['tonelaje']; 
+             $this->norma=$res[0]['norma'];                                                 			
              return $this;
                
              			 
@@ -98,7 +114,7 @@ class Ut {
          }
          
 	    // comprobaciones
-	    if(count($datos)!=7) 
+	    if(count($datos)!=10) 
 		{
 		    Errores::g()->add('Falta algún dato que indicar');
 			return false; 
@@ -120,6 +136,18 @@ class Ut {
             Errores::g()->add('Falta indicar la Estación de Fin');
             return false;
          }
+
+          if($tipo=="")  
+        {
+            Errores::g()->add('Falta indicar el tipo de vehículo');
+            return false;
+         }
+
+           if($norma=="")  
+        {
+            Errores::g()->add('Falta indicar la antigüedad del vehículo');
+            return false;
+         }
         
 			
 		
@@ -132,6 +160,12 @@ class Ut {
         if(!is_numeric($costeXkm)) 
         {
             Errores::g()->add('Debe especificar el coste por kilómetro');
+            return false;
+        }
+
+         if(!is_numeric($tonelaje)) 
+        {
+            Errores::g()->add('Debe especificar el tonelaje del vehículo');
             return false;
         }
 		
@@ -164,9 +198,9 @@ class Ut {
     				 if($activo=="on") $activo="true";
                      else $activo="false";
     				 $c="INSERT INTO transportes (nombre,estacion_inicio,estacion_fin,id_usuario,";
-    				 $c.="activo,coste_x_km,coste_x_dia) VALUES ";
+    				 $c.="activo,coste_x_km,coste_x_dia, tipo, tonelaje, norma) VALUES ";
     				 $c.="('$nombre',$estacionInicio,$estacionFin,$idUser,";
-    				 $c.="$activo,$costeXkm,$costeXdia);";    
+    				 $c.="$activo,$costeXkm,$costeXdia,'$tipo',$tonelaje, '$norma');";    
                     // Errores::g()->add($c);           
     				 $this->bd->put($c);
                      $this->id=$this->bd->uid('id_transportes','transportes');                     
@@ -202,7 +236,7 @@ class Ut {
          }
          
         // comprobaciones
-        if(count($datos)!=7) 
+        if(count($datos)!=10) 
         {
             Errores::g()->add('Falta algún dato que indicar');
             return false; 
@@ -224,6 +258,18 @@ class Ut {
             Errores::g()->add('Falta indicar la Estación de Fin');
             return false;
          }
+
+        if($tipo=="") 
+        {
+            Errores::g()->add('Falta indicar el tipo de vehículo');
+            return false;
+         }
+
+            if($norma=="")  
+        {
+            Errores::g()->add('Falta indicar la antigüedad del vehículo');
+            return false;
+         }
         
         if(!is_numeric($costeXdia)) 
         {
@@ -234,6 +280,12 @@ class Ut {
         if(!is_numeric($costeXkm)) 
         {
             Errores::g()->add('Debe especificar el coste por kilómetro');
+            return false;
+        }
+
+         if(!is_numeric($tonelaje)) 
+        {
+            Errores::g()->add('Debe especificar el tonelaje del vehículo');
             return false;
         }
         
@@ -262,6 +314,9 @@ class Ut {
                      $c1.=",estacion_fin=$estacionFin,coste_x_km=$costeXkm";
                      $c1.=",coste_x_dia=$costeXdia ";
                      $c1.=",activo='$activo'";
+                     $c1.=",tipo='$tipo'";
+                     $c1.=",tonelaje='$tonelaje'";
+                     $c1.=",norma='$norma'";
                      $c1.=" WHERE id_transportes=$id";
                      
                 // Errores::g()->add($c1);
@@ -313,7 +368,7 @@ class Ut {
    {
        if($idu==0) return false; // si el user no está logeado
        
-       $c="SELECT id_transportes,nombre,estacion_inicio,estacion_fin,coste_x_km,coste_x_dia,activo";
+       $c="SELECT id_transportes,nombre,estacion_inicio,estacion_fin,coste_x_km,coste_x_dia,activo, tipo, tonelaje, norma";
        $c.=" FROM transportes ";
        $c.=" WHERE id_usuario=$idu and borrado='FALSE' ";
        if($id!=0) $c.=" and id_transportes=$id"; // Para un unico transporte
