@@ -148,7 +148,7 @@ class Rutas {
                      $tramo['objFin']=$afin;
                      $tramo['idtransporte']=$it;
                      $tramo['transporte']=$nt;
-                     $tramo['hora']=date("d/m/Y H:i",$v2['hora']);
+                     $tramo['hora']=date("m/d/Y H:i",$v2['hora']);
                      $tramo['coste']=$v2['coste'];
                      $tramo['km']=$v2['distancia'];
                      $tramo['pasos']=explode(";",$v2['pasos']);
@@ -199,7 +199,7 @@ class Rutas {
    function getRutas($idUser=0)
    {
        if($idUser==0) return json_encode(array());
-       $s="select distinct(fecha) as fecha,to_date(fecha,'DD/MM/YYYY') as f from rutas where id_usuario=$idUser order by f desc";
+       $s="select distinct(fecha) as fecha,to_date(fecha,'MM/DD/YYYY') as f from rutas where id_usuario=$idUser order by f desc";
        $this->bd->put($s);
        $total=$this->bd->num();
        if($total>0)

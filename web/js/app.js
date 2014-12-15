@@ -2279,7 +2279,16 @@ Ext.onReady(function(){
 	    }
 	    function Ehora(value)
 	    {
-	    	return value + "h";
+	    	var d = new Date(Date.parse(value));
+	    	var hh= d.getHours();
+	    	var mm= d.getMinutes();
+	    	if(mm< 10){
+	    		mm = '0'+mm;
+	    	}
+	    	if(hh < 10){
+	    		hh = '0'+hh;
+	    	}
+	    	return d.getDate() +"/" +(d.getMonth()+1) +"/"+ d.getFullYear() +"  "+ hh +":"+mm+ "h";
 	    }
 	    var gridRuta = new Ext.grid.GridPanel({
 	        store: storeRutas,
@@ -2335,6 +2344,9 @@ Ext.onReady(function(){
 	    gridRuta.on('rowclick', function(grid, rowIndex, columnIndex, e) { 
 	    	
 	    	var groupIndex = storeRutas.getAt(rowIndex).get('groupIndex');
+	    	tipoV = storeRutas.getAt(rowIndex).get('tipo_vehiculo');
+	    	tonelajeV = storeRutas.getAt(rowIndex).get('tonelaje_vehiculo');
+	    	normaV = storeRutas.getAt(rowIndex).get('norma_vehiculo');
 	        //console.log("Indice del store: " + rowIndex);
 	    	var inicio=storeRutas.getAt(rowIndex).get('objInicio');
 	    	var fin=storeRutas.getAt(rowIndex).get('objFin');
@@ -2366,7 +2378,7 @@ Ext.onReady(function(){
 	    	                       // pintar ruta
 	    	var tmpRutaT=new Array();
 	    	var d = new Date(Ext.getCmp('fechaInicio').getValue());
-	    	hora_inicio = d.getDate()+'/' +(d.getMonth()+1) +'/' + d.getFullYear() +' ' + Ext.getCmp('horaInicio').getValue();
+	    	hora_inicio = (d.getMonth()+1)+'/' +d.getDate() +'/' + d.getFullYear() +' ' + Ext.getCmp('horaInicio').getValue();
 	    	// Se busca los records afectados por ese record(nombre transporte) del store de rutas	 
 	    	  	 
 	    	 var c1 = storeRutas.queryBy(function(record,id) { 
@@ -2462,11 +2474,14 @@ Ext.onReady(function(){
 	   
 	    function escribeHora(value, metaData, record, rowIndex, colIndex, store)
 		{	//alert(record.get('activo'));	
-				    		    	
+			    		    	
 	    	return value + "h";
 	    	
 		}
-	    
+		 function escribeFecha(value, metaData, record, rowIndex, colIndex, store){
+		    var d = new Date(Date.parse(value));
+		    return d.getDate() +"/" +(d.getMonth()+1) +"/"+ d.getFullYear();
+	    }
 	    
 	    function verRuta(grid, rowIndex, colIndex)
 	    {
@@ -2500,7 +2515,8 @@ Ext.onReady(function(){
 			  		name: 'fechaRes',
 			  		width:210,
 			  		sortable: true,			  		
-			  		style:"font-weight: bold;"
+			  		style:"font-weight: bold;",
+			  		renderer: escribeFecha
 			  	},
 			  	{
 			  		id:'horaRes',
@@ -2935,6 +2951,10 @@ Ext.onReady(function(){
 	    gridResRutas.on('rowclick', function(grid, rowIndex, columnIndex, e) { 
 	    	
 	    	var groupIndex = storeResRutas.getAt(rowIndex).get('groupIndex');
+	    	tipoV = storeResRutas.getAt(rowIndex).get('tipo_vehiculo');
+	    	tonelajeV = storeResRutas.getAt(rowIndex).get('tonelaje_vehiculo');
+	    	normaV = storeResRutas.getAt(rowIndex).get('norma_vehiculo');
+
 	        //console.log("Indice del store: " + rowIndex);
 	    	var inicio=storeResRutas.getAt(rowIndex).get('objInicio');
 	    	var fin=storeResRutas.getAt(rowIndex).get('objFin');

@@ -68,7 +68,7 @@ curl_close ($ch);
   
     $af=explode("-",$fecha); 
     $ah=explode(":",$hora);   
-    $fecha = $af[2].'/'.$af[1].'/'.$af[0]; 
+    $fecha = $af[1].'/'.$af[2].'/'.$af[0]; 
      
     $ruta=new Rutas();
     // grabamos ruta
