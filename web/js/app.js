@@ -24,7 +24,7 @@ var iconTruck = new L.icon({
 
 var ruta = new L.LayerGroup();
 var rutaParcial = new L.Polyline("rutasParciales");
-var stylesheetStations = '* {iconUrl: "./img/station.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [activo="f"] {iconUrl: "./img/station_inactive.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="origin"] {iconUrl: "./img/station-origin.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="target"] {iconUrl: "./img/station-target.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;}';
+var stylesheetStations = '* {iconUrl: "./img/station.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [activo="f"] {iconUrl: "./img/station_inactive.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [tipo="Origen"] {iconUrl: "./img/station-origin.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [tipo="Destino"] {iconUrl: "./img/station-target.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;}';
 var markers = new SMC.layers.markers.MarkerLayer({
 	label: 'Estaciones actuales',
 	stylesheet: stylesheetStations
@@ -3815,13 +3815,13 @@ function zoomSection(startStation, endStation, pasos) {
 	var features = [];
 	for(var m=0; m < stationsMarkers.length; m++){
 		if(stationsMarkers[m].feature.id == startStation.id_estaciones){
-			stationsMarkers[m].feature.properties.type = 'origin';		
+			stationsMarkers[m].feature.properties.tipo = 'Origen';		
 		}
 		else if(stationsMarkers[m].feature.id == endStation.id_estaciones){
-			stationsMarkers[m].feature.properties.type = 'target';		
+			stationsMarkers[m].feature.properties.tipo= 'Destino';		
 		}
 		else{
-			stationsMarkers[m].feature.properties.type = 'stop';
+			stationsMarkers[m].feature.properties.tipo = 'Parada';
 		}
 		features[m] = stationsMarkers[m].feature;
 
@@ -3922,13 +3922,13 @@ function zoomRoute(stations) {
 	var features = [];
 	for(var m=0; m < stationsMarkers.length; m++){
 		if(stationsMarkers[m].feature.id == origin){
-			stationsMarkers[m].feature.properties.type = 'origin';		
+			stationsMarkers[m].feature.properties.tipo = 'Origen';		
 		}
 		else if(stationsMarkers[m].feature.id == target){
-			stationsMarkers[m].feature.properties.type = 'target';		
+			stationsMarkers[m].feature.properties.tipo = 'Destino';		
 		}
 		else{
-			stationsMarkers[m].feature.properties.type = 'stop';
+			stationsMarkers[m].feature.properties.tipo = 'Parada';
 		}
 		features[m] = stationsMarkers[m].feature;
 
