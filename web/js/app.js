@@ -24,7 +24,7 @@ var iconTruck = new L.icon({
 
 var ruta = new L.LayerGroup();
 var rutaParcial = new L.Polyline("rutasParciales");
-var stylesheetStations = '* {iconUrl: "./img/station.png";markerWidth: 26;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [activo="f"] {iconUrl: "./img/station_inactive.png";markerWidth: 24;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="origin"] {iconUrl: "./img/station-origin.png";markerWidth: 24;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="target"] {iconUrl: "./img/station-target.png";markerWidth: 24;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;}';
+var stylesheetStations = '* {iconUrl: "./img/station.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [activo="f"] {iconUrl: "./img/station_inactive.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="origin"] {iconUrl: "./img/station-origin.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="target"] {iconUrl: "./img/station-target.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;}';
 var markers = new SMC.layers.markers.MarkerLayer({
 	label: 'Actual Stations',
 	stylesheet: stylesheetStations
@@ -258,18 +258,18 @@ Ext.onReady(function(){
 		id:'gridUt',
 		columns: [			
 		  	mySelectionModel1, //checkbox for 
-		  	{id:'nombre',header:'Nombre', dataIndex:'nombre', width:69,sortable: true},
-			{id:'estacion_inicio',header:'Inicio', dataIndex:'nestacion_inicio', width:65,sortable: true},			
-			{id:'estacion_fin',header:'Fin', dataIndex:'nestacion_fin', width:65, sortable: true},			
-			{id:'coste_x_km',header:'€/km', dataIndex:'coste_x_km', width:33,sortable: true},
-			{id:'coste_x_dia',header:'€/dia', dataIndex:'coste_x_dia', width:33,sortable: true},
-			{id:'tipo',header:'Tipo', dataIndex:'tipo', width:70,sortable: true, renderer: getType},
+		  	{id:'nombre',header:'Nombre', dataIndex:'nombre', width:67,sortable: true},
+			{id:'estacion_inicio',header:'Inicio', dataIndex:'nestacion_inicio', width:63,sortable: true},			
+			{id:'estacion_fin',header:'Fin', dataIndex:'nestacion_fin', width:63, sortable: true},			
+			{id:'coste_x_km',header:'€/km', dataIndex:'coste_x_km', width:35,sortable: true},
+			{id:'coste_x_dia',header:'€/dia', dataIndex:'coste_x_dia', width:35,sortable: true},
+			{id:'tipo',header:'Tipo', dataIndex:'tipo', width:68,sortable: true, renderer: getType},
 			{id:'tonelaje',header:'Tonelaje', dataIndex:'tonelaje', width:51,sortable: true},
 			{id:'norma',header:'Norma', dataIndex:'norma', width:38,sortable: true},
 			{id:'activo',header:'Activo', dataIndex:'activo', width:41,sortable: true,renderer:codBoolean},
 			{
                 xtype: 'actioncolumn',
-                width: 58,
+                width: 68,
                 items: 
                 	[
                 	 {
@@ -408,7 +408,12 @@ Ext.onReady(function(){
 	    	idUt.set('tipo', formEditUt.getForm().getValues().tipo);
 	    
 	    	idUt.set('tonelaje', formEditUt.getForm().getValues().tonelaje);
-	    	idUt.set('norma', formEditUt.getForm().getValues().norma);
+	    	storeNorma.each(function(record, index){
+	  		 	 if(record.get('id_norma') == formEditUt.getForm().getValues().norma || record.get('norma') == formEditUt.getForm().getValues().norma ) {	
+	  		 	 	idUt.set('norma',record.get('id_norma'));
+	  		 	 }
+	    	});
+	    	//idUt.set('norma', formEditUt.getForm().getValues().norma);
 	    	WEditUt.close();
 		}
 		
@@ -417,7 +422,8 @@ Ext.onReady(function(){
 		 var fila = storeUt.getAt(indice); // storeUt->recogemos la fila afectada
 		 var valueNorma = fila.get('norma');
 	     storeNorma.each(function(record, index){
-	  		 	 if(record.get('id_norma') == fila.get('norma')) {	
+	  		 	 if(record.get('id_norma') == fila.get('norma')) {
+	  		 	    valueNorma = record.get('id_norma');	
 	  		 	 	fila.set('norma',record.get('norma'));
 	  		 	 }
 	  	});
@@ -430,7 +436,7 @@ Ext.onReady(function(){
 		        frame:true, 
 		        title:'Editar Unidad de Transporte',         
 		        monitorValid:true,
-				defaults    : {allowBlank: false,width:'400px'}, 
+				defaults    : {allowBlank: false,width:'300px'}, 
 				defaultType:'textfield',
 				bodyStyle:'padding: 15px',
 				items:[
@@ -519,7 +525,13 @@ Ext.onReady(function(){
 		                formBind: true,  
 		                handler:function(){ 	                	
 		                	formEditUt.getForm().findField('id_transportes').setValue(storeUt.getAt(index).get('id_transportes'));
-		                	fila.set('norma',valueNorma);
+						    storeNorma.each(function(record, index){
+					  		 	 if(record.get('id_norma') == formEditUt.getForm().getValues().norma || record.get('norma') == formEditUt.getForm().getValues().norma ) {	
+					  		 	 	formEditUt.getForm().findField('norma').setValue(record.get('id_norma'));
+					  		 	 }
+					    	});
+		                	//formEditUt.getForm().findField('norma').setValue(storeUt.getAt(index).get('id_norma'));
+		                	overrideStore('tipo.0');
 		                	formEditUt.getForm().submit({ 
 		                        method:'POST', 
 		                        waitMsg:'Enviando datos...',
@@ -845,6 +857,28 @@ Ext.onReady(function(){
 	
   function registraUt()
    {  
+   	 Ext.apply(Ext.form.VTypes,{  
+    	  
+		    	 VRange: function(val, field){ 
+		    	 if(val >= 1 && val <= 60) 
+		    		 return true;
+		    		else
+		    			return false;
+		    	 },
+		    	 VRangeText: 'Entre 1 y 60', //mensaje de error  
+		    	 VRangeMask: /[\d\.]/i
+		  
+	   });
+
+   	 	Ext.apply(Ext.form.VTypes,{  
+    	  
+    	     VNorma: function(val, field){ 
+  				return true;
+	    	 },
+	    	 VNormaText: 'Norma no válida para este tipo de vehículo', //mensaje de error  
+	    	 VNormaMask: /[\d\.]/i
+	  
+	    }); 
 	  
 	// Formulario para crear nuevas unidades de transportes
       var formNuevoUt = new Ext.FormPanel({ 
@@ -902,7 +936,11 @@ Ext.onReady(function(){
 						   hiddenName: 'tipo',
 						   valueField: 'id_type',
 						   displayField:'tipo',
-						   listeners:{select: setRange}  
+						   listeners:{select:function(){
+						   	    formNuevoUt.getForm().findField('norma').focus();
+							   	formNuevoUt.getForm().findField('tonelaje').focus();
+							   } 
+						   } 
 					       
 				},
 				{name:'tonelaje',fieldLabel:'Tonelaje',vtype:'alfa',width:'60px',vtype:'VRange', listeners:{focus:setRange}},
@@ -917,7 +955,13 @@ Ext.onReady(function(){
 						   hiddenName: 'norma',
 						   valueField: 'id_norma',
 						   displayField:'norma',
-						   listeners:{focus: setStoreNorma} 
+						   vtype:'VNorma',
+						   listeners: {
+						     focus: function(){
+						     	setStoreNorma();
+						     },
+						     select: setStoreNorma
+						 }
 					       
 					   },
   			   ],
@@ -1040,17 +1084,32 @@ Ext.onReady(function(){
 
 	       function setStoreNorma(){
 			  var param = formNuevoUt.getForm().getValues().tipo;
-			  storeNorma.url = 'consulta_norma.php?tipo=' +param;
-		      reloadStore(param);
+			  Ext.Ajax.request({  
+		                     url: 'consulta_norma.php?tipo=' +param,  
+		                     success: function(response)
+		                     {
+		                     	obj = Ext.util.JSON.decode(response.responseText);
+		                     	storeNorma.loadData(obj);
+		                     	setNorma();
+
+		                     }
+		          });
 
 	       }
+
+		
+
+	 	    function setNorma(){
+	  		  var norma = formNuevoUt.getForm().getValues().norma;
+	  		  calculateNorma(norma);
+
+	  		
+	 	   }
 
 
 	       function setRange(){
 	  		 var tipo = formNuevoUt.getForm().getValues().tipo;
 	  		 calculateRange(tipo);
-	  		 formNuevoUt.getForm().findField('tonelaje').focus();
-	  		 formNuevoUt.getForm().findField('tipo').focus();
 
 	 	   }
 	    }// fin de registraUt
