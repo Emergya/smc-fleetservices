@@ -1860,9 +1860,10 @@ Ext.onReady(function(){
 	       format:'H:i',  
 	       name:'hora',
 	       editable:false,
-	       value:'00:00',
+	       value:'h:i',
 	       name: 'horaInicio',
-           id: 'horaInicio'
+           id: 'horaInicio',
+           value:new Date()
 	  });
 	    
 	    var FormCalcRuta = new Ext.FormPanel({ 
@@ -2145,6 +2146,8 @@ Ext.onReady(function(){
 						                     
 						                     success: function(response)
 						                     {
+						                     	var d = new Date(Ext.getCmp('fechaInicio').getValue());
+	    										hora_inicio = (d.getMonth()+1)+'/' +d.getDate() +'/' + d.getFullYear() +' ' + Ext.getCmp('horaInicio').getValue();
 						                    	 var transportes = Ext.util.JSON.decode(response.responseText);
 						                    	 var datosJson=obj.datos; // se tiene el json
 						                    	 for(var i = 0; i < datosJson.datos.length; i++){
@@ -2312,9 +2315,9 @@ Ext.onReady(function(){
 		    		vehiculos[transporte] = {fechas:[]};   	
 		    	
 		    	if(vehiculos[transporte].fechas.length == 0){
-		    		vehiculos[transporte].fechas.push(fecha);
+		    		vehiculos[transporte].fechas.push(hora_inicio.split(' ')[0]);
 		    	}
-		    	else{
+		    	
 		    		var exit;
 		    		for(var f in vehiculos[transporte].fechas){
 		    			if(vehiculos[transporte].fechas[f] == fecha){
@@ -2324,7 +2327,7 @@ Ext.onReady(function(){
 		    		if(!exit){
 		    			vehiculos[transporte].fechas.push(fecha);
 		    		}
-		    	}
+		    	
 		    
 		    }
 	    	value = value.toFixed(2);
@@ -2436,8 +2439,7 @@ Ext.onReady(function(){
 	    	var rutaT=new Array(); // se crea variable temporal que contendrá objetos de tipo estaciones que será el que se pase al metodo
 	    	                       // pintar ruta
 	    	var tmpRutaT=new Array();
-	    	var d = new Date(Ext.getCmp('fechaInicio').getValue());
-	    	hora_inicio = (d.getMonth()+1)+'/' +d.getDate() +'/' + d.getFullYear() +' ' + Ext.getCmp('horaInicio').getValue();
+	    	
 	    	// Se busca los records afectados por ese record(nombre transporte) del store de rutas	 
 	    	  	 
 	    	 var c1 = storeRutas.queryBy(function(record,id) { 
@@ -2852,9 +2854,9 @@ Ext.onReady(function(){
 		    		vehiculos[transporte] = {fechas:[]};   	
 		    	
 		    	if(vehiculos[transporte].fechas.length == 0){
-		    		vehiculos[transporte].fechas.push(fecha);
+		    		vehiculos[transporte].fechas.push(hora_inicio.split(' ')[0]);
 		    	}
-		    	else{
+		    	
 		    		var exit;
 		    		for(var f in vehiculos[transporte].fechas){
 		    			if(vehiculos[transporte].fechas[f] == fecha){
@@ -2864,7 +2866,7 @@ Ext.onReady(function(){
 		    		if(!exit){
 		    			vehiculos[transporte].fechas.push(fecha);
 		    		}
-		    	}
+		    	
 		    
 		    }
 	    	value = value.toFixed(2);

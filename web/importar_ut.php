@@ -28,11 +28,14 @@ function truncar($datos)
         $fin= $v['fin'];
         $coste_x_dia= $v['coste_x_dia'];
         $coste_x_km= $v['coste_x_km'];
+        $tonelaje= $v['tonelaje'];
+        $tipo= $v['tipo'];
+        $norma= $v['norma'];
         
         if(strtolower($v['activo'])=='si') $activo="on";
         else $activo="off";
               
-        $dat=array('nombre'=>$nombre,'estacionInicio'=>$inicio,'estacionFin'=>$fin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo,'idUser'=>$idUser);
+        $dat=array('nombre'=>$nombre,'estacionInicio'=>$inicio,'estacionFin'=>$fin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo, 'tipo'=>$tipo, 'tonelaje'=>$tonelaje, 'norma'=>$norma,'idUser'=>$idUser);
         $ut->add($dat);
     }
 }
@@ -67,6 +70,9 @@ function actualizar($datos)
             $fin= $v['fin'];
             $coste_x_dia= $v['coste_x_dia'];
             $coste_x_km= $v['coste_x_km'];
+            $tonelaje= $v['tonelaje'];
+            $tipo= $v['tipo'];
+             $norma= $v['norma'];
                     
             if(strtolower($v['activo'])=='si') $activo="on";
             else $activo="off";            
@@ -75,12 +81,12 @@ function actualizar($datos)
             if(in_array($nombre, $nombres)) // ya existe la estacion, a actualizar
             {                   
                  $id=array_search($nombre, $nombres);                                
-                 $datosM=array('nombre'=>$nombre,'estacionInicio'=>$inicio,'estacionFin'=>$fin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo,'idUser'=>$idUser);                    
+                 $datosM=array('nombre'=>$nombre,'estacionInicio'=>$inicio,'estacionFin'=>$fin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo,'tipo'=>$tipo, 'tonelaje'=>$tonelaje, 'norma'=>$norma,'idUser'=>$idUser);                    
                  $ut->edit($id,$datosM);    
             }
             else // no existe, a crear
             {
-                $datosM=array('nombre'=>$nombre,'estacionInicio'=>$inicio,'estacionFin'=>$fin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo,'idUser'=>$idUser);
+                $datosM=array('nombre'=>$nombre,'estacionInicio'=>$inicio,'estacionFin'=>$fin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo,'tipo'=>$tipo, 'tonelaje'=>$tonelaje, 'norma'=>$norma,'idUser'=>$idUser);
                 $ut->add($datosM);     
             }
         }
@@ -193,7 +199,7 @@ if(!isset($_SESSION['IDUSER']))
                                     
                                     
                                  
-                                    if(($nom=="")||($act=="")||($inicio=="")||($fin=="")) 
+                                    if(($nom=="")||($act=="")||($inicio=="")||($fin=="")||($tipo=="")||$norma=="") 
                                     {
                                         Errores::g()->add('Faltan datos en la fila nº ' . $fila);
                                         break;
@@ -207,6 +213,11 @@ if(!isset($_SESSION['IDUSER']))
                                     if(!is_numeric($coste_x_km)) 
                                     {
                                         Errores::g()->add('Debe especificar el coste por kilómetro en la fila nº' + $fila);
+                                        break;
+                                    }
+                                     if(!is_numeric($tonaleje)) 
+                                    {
+                                        Errores::g()->add('Debe especificar el tonelaje del vehículo en la fila nº' + $fila);
                                         break;
                                     }
                                     if((strtolower($act)!="si")&&(strtolower($act)!="no")) 
@@ -237,7 +248,9 @@ if(!isset($_SESSION['IDUSER']))
                                     $temp['fin']=$id_fin; // latitud
                                     $temp['coste_x_dia']=$coste_x_dia; // longuitud
                                     $temp['coste_x_km']=$coste_x_km; // longuitud
-                                    
+                                    $temp['tonelaje'] = $tonelaje;
+                                    $temp['tipo'] = $tipo;
+                                    $temp['norma'] = $norma;
                                                                                                                             
                                     $salida[]=$temp;
                                     // en $salida se va teniendo las nuevas estaciones                            
