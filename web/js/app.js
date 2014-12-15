@@ -26,7 +26,7 @@ var ruta = new L.LayerGroup();
 var rutaParcial = new L.Polyline("rutasParciales");
 var stylesheetStations = '* {iconUrl: "./img/station.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [activo="f"] {iconUrl: "./img/station_inactive.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="origin"] {iconUrl: "./img/station-origin.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [type="target"] {iconUrl: "./img/station-target.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;}';
 var markers = new SMC.layers.markers.MarkerLayer({
-	label: 'Actual Stations',
+	label: 'Estaciones actuales',
 	stylesheet: stylesheetStations
 });
 
@@ -1965,7 +1965,7 @@ Ext.onReady(function(){
 	    	 markers.deleteTree = true;
 	    	 map.removeLayer(markers);
 	    	 markers =  new SMC.layers.markers.MarkerLayer({
-				label: 'Actual Stations',
+				label: 'Estaciones actuales',
 				stylesheet: stylesheetStations
 			});
 	    	markers.load = function(){
@@ -2759,7 +2759,7 @@ Ext.onReady(function(){
 						    	 markers.deleteTree = true;
 						    	 map.removeLayer(markers);
 						    	 markers =  new SMC.layers.markers.MarkerLayer({
-									label: 'Route Stations',
+									label: 'Estaciones de la ruta',
 									stylesheet: stylesheetStations
 								});
 				    	
@@ -3590,7 +3590,7 @@ Ext.onReady(function(){
 
 				map.removeLayer(markers);
 				markers =  new SMC.layers.markers.MarkerLayer({
-					label: 'Actual Stations',
+					label: 'Estaciones actuales',
 					stylesheet: stylesheetStations
 				});
 				markers.load = function(){
@@ -3887,7 +3887,7 @@ function drawRoute(datosJson) {
 	 	var stylesheet ='*[name="'+r+'"]{color: "'+color+'";}';
 	 	options={
 	 		stylesheet: stylesheet,
-	 		label:'Route_'+r
+	 		label:'Ruta del '+r
 	 	};
 	 	var layer = new SMC.layers.geometry.GeometryLayer(options);
 	 	layer.addTo(ruta);
