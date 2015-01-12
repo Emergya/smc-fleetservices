@@ -33,7 +33,9 @@ $fecha = explode ('T', $inputObj -> fecha)[0];
 
 
 
-$url = 'http://localhost:8084/mtsp-ga-webapp/v1/calculateMTSP';
+//$url = 'http://localhost:8084/mtsp-ga-webapp/v1/calculateMTSP';
+//$url = 'http://localhost:8084/smartcity-mtsp/v1/calculateMTSP';
+$url = 'http://178.62.197.215/smartcity-mtsp//v1/calculateMTSP';
 
 $ch = curl_init();
 
