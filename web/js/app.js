@@ -2,31 +2,49 @@
 
 //Variables para el control y visualización del mapa
 var map, layer;
-var controlNavigation = new OpenLayers.Control.Navigation();
-//var controlMouse = new OpenLayers.Control.MousePosition();
-var centerPoint = new OpenLayers.LonLat(-667100.61351, 4493902.57785);
 
-//Iconos para marcas en el mapa:
-var size = new OpenLayers.Size(25,41);
-var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
 
-var arrPopUps = [];
 var actualIcon;
-var iconHome = new OpenLayers.Icon('img/home.png', size, offset);
-var iconStation = new OpenLayers.Icon('img/station.png', size, offset);
-var iconTruck = new OpenLayers.Icon('img/truck.png', size, offset);
+var iconHome = new L.icon({
+        			iconUrl: "./img/home.png",
+        			iconSize: [25,41]
+        		})
+var iconStation =  new L.icon({
+        			iconUrl: "./img/station.png",
+        			iconSize: [25,30],
+        			iconAnchor:[25,30]
+        		})
+var iconTruck = new L.icon({
+        			iconUrl: "./img/truck.png",
+        			iconSize: [25,41]
+        		})
 
-var arrMarkers = [];
-var markers = new OpenLayers.Layer.Markers( "Markers" );
 
-var ruta = new OpenLayers.Layer.Vector("rutas");
-var rutaParcial = new OpenLayers.Layer.Vector("rutasParciales");
+
+
+var ruta = new L.LayerGroup();
+var rutaParcial = new L.Polyline("rutasParciales");
+var stylesheetStations = '* {iconUrl: "./img/station.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [activo="f"] {iconUrl: "./img/station_inactive.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [tipo="Origen"] {iconUrl: "./img/station-origin.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;} * [tipo="Destino"] {iconUrl: "./img/station-target.png";markerWidth: 22;markerHeight: 30; anchorLeft:13; anchorTop:30; disableClustering:true;}';
+var markers = new SMC.layers.markers.MarkerLayer({
+	label: 'Estaciones actuales',
+	stylesheet: stylesheetStations
+});
+
+var optionColor = ["blue", "red","green", "yellow"];
+var vector;
+var vectorSelected = { 
+		  color: 'aqua', 
+		  opacity: 1,
+		  weight: 5
+};
+var hora_inicio, tipoV, tonelajeV, normaV;
+var arrTrans = [];
 
 var markerClick;
 
 var toolbarItems = [];
 
-var projGoogle = new OpenLayers.Projection("EPSG:4326");
+
 
 	/*
 	 * Formulario busqueda mapa 
@@ -75,26 +93,22 @@ Ext.onReady(function(){
     
     toolbarItems.push(searchform);
     
-    map = new OpenLayers.Map();
-    layer = new OpenLayers.Layer.OSM({name: 'OSM Map'});
-    
-    map.addControl(controlNavigation); 
-    map.addLayer(layer);
-    map.addLayer(ruta);
-    map.addLayer(rutaParcial);
-    map.addLayer(markers);
+ 
 
-    var mapPanel = new GeoExt.MapPanel({ 
-    	title: 'Callejero',
+  var mapPanel = new Ext.Panel({
+  		
+      	title: 'Callejero',
         stateId: "mappanel",
-        region  :   "center",
-        map: map,
-        zoom: 12,
-        //layers: [layer, markers],
+        region  :  "center",
+        html: "<div id='map' style='height:100%'></div>",
         tbar : toolbarItems,
-        center: centerPoint,
+                
     });
+
+	
     
+    
+   
    //*****************************************************// 
    //**************** FUNCIONES GENERALES  ***************//
   //*****************************************************//
@@ -109,8 +123,10 @@ Ext.onReady(function(){
     	 VEnteroMask: /[\d\.]/i
   
     });
-    
-    
+
+
+
+  
     
     function desconectar()
     {
@@ -158,40 +174,7 @@ Ext.onReady(function(){
   //*****************************************************//
 	var mySelectionModel1 = new Ext.grid.CheckboxSelectionModel({singleSelect: false}); 
     var index=0; // indice para coger la fila de transporte(de storeUt) a modificar  	   
- // Stores para cargar estaciones en los formularios de transportes
-    /*
-    var store1 = new Ext.data.JsonStore({  
-        url: 'consulta_estaciones.php',  
-        totalProperty: 'count', 
-        root: 'data',  
-        fields: 
-        	[
-        	  {name:'nombre',mapping:'nombre',type:'string'},
-        	  {name:'id_estaciones',mapping:'id_estaciones',type:'float'},
-        	  {name:'lat',mapping:'lat',type:'float'},
-        	  {name:'lon',mapping:'lon',type:'float'},
-        	  {name:'direccion',mapping:'direccion',type:'string'},
-        	  {name:'activo',mapping:'activo',type:'boolean'}
-            ]  
-    });
-    
-    var store2 = new Ext.data.JsonStore({  
-        url: 'consulta_estaciones.php',  
-        totalProperty: 'count', 
-        root: 'data',  
-        fields: 
-        	[
-        	  {name:'nombre',mapping:'nombre',type:'string'},
-        	  {name:'id_estaciones',mapping:'id_estaciones',type:'float'},
-        	  {name:'lat',mapping:'lat',type:'float'},
-        	  {name:'lon',mapping:'lon',type:'float'},
-        	  {name:'direccion',mapping:'direccion',type:'string'},
-        	  {name:'activo',mapping:'activo',type:'boolean'}
-            ]  
-    });
-     */   
-    // end para stores para carga de estaciones para transportes
-    
+ 
     
     // Store para unidades de transportes-->Grid de transportes
     var storeUt = new Ext.data.JsonStore({
@@ -206,8 +189,12 @@ Ext.onReady(function(){
     	         {name:'activo',mapping:'activo',type:'string'},
     	         {name:'coste_x_km',type:'float'},
     	         {name:'coste_x_dia',type:'float'},
+    	         {name:'tipo',mapping:'tipo', type:'string'},
+    	         {name:'tonelaje',mapping:'tonelaje',type:'float'},
+    	         {name:'norma',mapping:'norma', type:'string'},
     	         {name:'nestacion_inicio',mapping:'nestacion_inicio',type:'string'}, // nos traemos tb los nombres para el grid
-    	         {name:'nestacion_fin',mapping:'nestacion_fin',type:'string'}     	         
+    	         {name:'nestacion_fin',mapping:'nestacion_fin',type:'string'},
+    	             	         
     	         ]
     });
    // storeUt.load(); ->no se puede poner aqui por si editan cambian las estaciones
@@ -221,21 +208,68 @@ Ext.onReady(function(){
         emptyMsg: 'No hay transportes',  
         pageSize: 1        
     });
+
+    var storeType = new Ext.data.JsonStore({
+    	url: 'consulta_tipos.php',
+    	root:'data',
+    	fields: [
+    	         {name:'id_type', mapping:'id_type',type:'string'},
+    	         {name:'tipo',mapping: 'tipo',type:'string'}, 
+    	         {name:'min',mapping: 'min',type:'float'}, 
+    	         {name:'max',mapping: 'max',type:'float'},         	         
+    	],
+    	autoLoad: true
+
+    	
+	});
+	 
+
+	 
+	  var storeNorma= new Ext.data.JsonStore({
+    	url: 'consulta_norma.php',
+    	root:'data',
+    	fields: [
+    	         {name:'id_norma', mapping:'id_norma',type:'string'},
+    	         {name:'norma',mapping: 'norma',type:'string'},          	         
+    	] ,
+    	autoLoad:true
+
+    	
+	});
+	 
+	
+	
+
+	 function getType(value){
+	 	var type = '';
+		 storeType.each(function(record,index)
+	  		 { 
+	  		    if(record.get('id_type')==value)
+	  		    	type =  record.get('tipo');
+	  		  });
+		 return type;
+	}
+
+	
+
   //Creando el objeto Ext.grid.GridPanel para listar transportes
 	var gridUt = new Ext.grid.GridPanel({		
 		store: storeUt,
 		id:'gridUt',
 		columns: [			
 		  	mySelectionModel1, //checkbox for 
-		  	{id:'nombre',header:'Nombre', dataIndex:'nombre',sortable: true},
-			{id:'estacion_inicio',header:'Inicio', dataIndex:'nestacion_inicio',sortable: true},			
-			{id:'estacion_fin',header:'Fin', dataIndex:'nestacion_fin',sortable: true},			
-			{id:'coste_x_km',header:'Coste/km', dataIndex:'coste_x_km', width:60,sortable: true},
-			{id:'coste_x_dia',header:'Coste/dia', dataIndex:'coste_x_dia', width:60,sortable: true},
-			{id:'activo',header:'Activo', dataIndex:'activo', width:50,sortable: true,renderer:codBoolean},
+		  	{id:'nombre',header:'Nombre', dataIndex:'nombre', width:67,sortable: true},
+			{id:'estacion_inicio',header:'Inicio', dataIndex:'nestacion_inicio', width:63,sortable: true},			
+			{id:'estacion_fin',header:'Fin', dataIndex:'nestacion_fin', width:63, sortable: true},			
+			{id:'coste_x_km',header:'€/km', dataIndex:'coste_x_km', width:35,sortable: true},
+			{id:'coste_x_dia',header:'€/dia', dataIndex:'coste_x_dia', width:35,sortable: true},
+			{id:'tipo',header:'Tipo', dataIndex:'tipo', width:68,sortable: true, renderer: getType},
+			{id:'tonelaje',header:'Tonelaje', dataIndex:'tonelaje', width:51,sortable: true},
+			{id:'norma',header:'Norma', dataIndex:'norma', width:38,sortable: true},
+			{id:'activo',header:'Activo', dataIndex:'activo', width:41,sortable: true,renderer:codBoolean},
 			{
                 xtype: 'actioncolumn',
-                width: 70,
+                width: 68,
                 items: 
                 	[
                 	 {
@@ -257,9 +291,14 @@ Ext.onReady(function(){
 		height:250,
 		width:alto,		
 	});
+
+
+
+	 
 	 // Elimina unidad de transporte	
 	  function eliminarUt(grid, rowIndex, colIndex)
 	  {
+
 		  //alert("Eliminando.. " + rec.get('id_transportes'));
 		   var rec = storeUt.getAt(rowIndex);	   
 		   var nt=rec.get('nombre');	  
@@ -310,6 +349,30 @@ Ext.onReady(function(){
 		// Editar info de transportes
 	  function editarUt(grid, indice, colIndex)
 	  {
+	  	 Ext.apply(Ext.form.VTypes,{  
+    	  
+		    	 VRange: function(val, field){ 
+		    	 if(val >= 1 && val <= 60) 
+		    		 return true;
+		    		else
+		    			return false;
+		    	 },
+		    	 VRangeText: 'Entre 1 y 60', //mensaje de error  
+		    	 VRangeMask: /[\d\.]/i
+		  
+	   });
+	  	 
+	  	Ext.apply(Ext.form.VTypes,{  
+    	  
+    	     VNorma: function(val, field){ 
+  				return true;
+	    	 },
+	    	 VNormaText: 'Norma no válida para este tipo de vehículo', //mensaje de error  
+	    	 VNormaMask: /[\d\.]/i
+	  
+	    }); 
+
+
 		index=indice; 
 		function extraeNombre2(combo) {
 	        var value = combo.getValue();
@@ -324,6 +387,8 @@ Ext.onReady(function(){
 
 	        return record ? record.get(combo.displayField) : null;
 	    }
+
+	   
 		
 		function guardaStoreUt()
 		{		
@@ -340,12 +405,33 @@ Ext.onReady(function(){
 	    	idUt.set('activo', vactivo);
 	    	idUt.set('coste_x_km', formEditUt.getForm().getValues().coste_x_km);	                        	
 	    	idUt.set('coste_x_dia', formEditUt.getForm().getValues().coste_x_dia);
+	    	idUt.set('tipo', formEditUt.getForm().getValues().tipo);
+	    
+	    	idUt.set('tonelaje', formEditUt.getForm().getValues().tonelaje);
+	    	storeNorma.each(function(record, index){
+	  		 	 if(record.get('id_norma') == formEditUt.getForm().getValues().norma || record.get('norma') == formEditUt.getForm().getValues().norma ) {	
+	  		 	 	idUt.set('norma',record.get('id_norma'));
+	  		 	 }
+	    	});
+	    	//idUt.set('norma', formEditUt.getForm().getValues().norma);
 	    	WEditUt.close();
 		}
 		
-		
+			
+
+		 var fila = storeUt.getAt(indice); // storeUt->recogemos la fila afectada
+		 var valueNorma = fila.get('norma');
+	     storeNorma.each(function(record, index){
+	  		 	 if(record.get('id_norma') == fila.get('norma')) {
+	  		 	    valueNorma = record.get('id_norma');	
+	  		 	 	fila.set('norma',record.get('norma'));
+	  		 	 }
+	  	});
+		 
+		 overrideStore(fila.get('tipo'));
+			
 		  var formEditUt = new Ext.FormPanel({ 
-		        labelWidth:70,		
+		        labelWidth:130,		
 		        url:'actualiza_ut.php', 
 		        frame:true, 
 		        title:'Editar Unidad de Transporte',         
@@ -354,7 +440,7 @@ Ext.onReady(function(){
 				defaultType:'textfield',
 				bodyStyle:'padding: 15px',
 				items:[
-					   {name:'nombre',fieldLabel:'Nombre'},
+					   {name:'nombre',fieldLabel:'Nombre', width: 300},
 					   {xtype:'checkbox',name:'activo',fieldLabel:'Activo',renderer:codBoolean},
 					   {
 						   xtype:'combo',
@@ -384,13 +470,68 @@ Ext.onReady(function(){
 					   },
 					   {name:'coste_x_km',fieldLabel:'Coste/Km(€)',vtype:'alfa',width:'60px',vtype:'VEntero'},
 					   {name:'coste_x_dia',fieldLabel:'Coste/dia(€)',vtype:'alfa',width:'60px',vtype:'VEntero'},
+					   {
+						   xtype:'combo',
+						   name:'tipo',
+						   triggerAction: 'all',  				   
+						   fieldLabel:'Tipo vehículo',
+						   editable:false,
+						   forceSelection:true,  
+						   store:storeType,
+						   hiddenName: 'tipo',
+						   valueField: 'id_type',
+						   displayField:'tipo', 
+						   listeners:{select: function(){
+						     //setStoreNormaEdit();   
+						   	 //overrideStore(this.value);
+						   	 formEditUt.getForm().findField('norma').focus();
+						   	 formEditUt.getForm().findField('tonelaje').focus();
+ 
+
+						   },
+						 
+						}
+
+					       
+					   },
+					   {name:'tonelaje',fieldLabel:'Tonelaje',width:'60px', vtype:'VRange',listeners:{focus:setRangeEdit}},
+					    {
+						   xtype:'combo',
+						   name:'norma',
+						   triggerAction: 'all',  				   
+						   fieldLabel:'Antigüedad del vehículo',
+						   editable:false,
+						   forceSelection:true,  
+						   store: storeNorma,
+						   hiddenName: 'norma',
+						   valueField: 'id_norma',
+						   displayField:'norma',
+						   vtype: 'VNorma',
+						   focusOnToFront: false,
+						   listeners: {
+						     focus: function(){
+						     	setStoreNormaEdit();
+						     },
+						     select: setStoreNormaEdit
+						 }
+					       
+					   },
 					   {xtype:'hidden',name:'id_transportes',id:'id_transportes'}
 					   ],
+					  
+					   
 				buttons:[{ 
 		                text:'Guardar',
 		                formBind: true,  
 		                handler:function(){ 	                	
 		                	formEditUt.getForm().findField('id_transportes').setValue(storeUt.getAt(index).get('id_transportes'));
+						    storeNorma.each(function(record, index){
+					  		 	 if(record.get('id_norma') == formEditUt.getForm().getValues().norma || record.get('norma') == formEditUt.getForm().getValues().norma ) {	
+					  		 	 	formEditUt.getForm().findField('norma').setValue(record.get('id_norma'));
+					  		 	 }
+					    	});
+		                	//formEditUt.getForm().findField('norma').setValue(storeUt.getAt(index).get('id_norma'));
+		                	overrideStore('tipo.0');
 		                	formEditUt.getForm().submit({ 
 		                        method:'POST', 
 		                        waitMsg:'Enviando datos...',
@@ -423,6 +564,8 @@ Ext.onReady(function(){
 		            { 
 		                text:'Cancelar',                 
 		                handler:function(){
+		                	fila.set('norma',valueNorma);
+		                	overrideStore('tipo.0');
 		                	if(storeUt.getAt(indice).get('activo')==1) storeUt.getAt(indice).set('activo','t');
 		                	else storeUt.getAt(indice).set('activo','f');
 		                	formEditUt.destroy();
@@ -445,20 +588,137 @@ Ext.onReady(function(){
 		        items: [formEditUt]
 		    });
 		    
+		   
 		  
-	      var fila = storeUt.getAt(indice); // storeUt->recogemos la fila afectada
-	      
+		  
+	     
+
 	     // acomodo del valor de activo para el checkbox del formulario de editar
 		  var valorActivo=0;
 		  if(fila.get('activo')=='t') valorActivo=1;
 		  fila.set('activo',valorActivo);
-		  // cargamos el storeUt en el formulario
+		  //fila.set('norma', fila.get('norma'));
+		  
+		
 		  formEditUt.getForm().loadRecord(fila);
 		  WEditUt.show();
+
+
+		
+		 
+		  function setStoreNormaEdit(){
+			  var param = formEditUt.getForm().getValues().tipo;
+		      	Ext.Ajax.request({  
+		                     url: 'consulta_norma.php?tipo=' +param,  
+		                     success: function(response)
+		                     {
+		                     	obj = Ext.util.JSON.decode(response.responseText);
+		                     	storeNorma.loadData(obj);
+		                     	setNormaEdit();
+
+		                     }
+		          });
+
+
+	      }
+
+	       function setRangeEdit(){
+	  		 var tipo = formEditUt.getForm().getValues().tipo;
+	  		 calculateRange(tipo);
+	  		
+	 	   }
+
+	 	    function setNormaEdit(){
+	  		  var norma = formEditUt.getForm().getValues().norma;
+	  		  calculateNorma(norma);
+
+	  		
+	 	   }
+
+	
 		  
 	  } // end editarUt
 	  
-	
+	  function reloadStore(param){
+	  	
+			  	Ext.Ajax.request({  
+		                     url: 'consulta_norma.php?tipo=' +param,  
+		                     success: function(response)
+		                     {
+		                     	obj = Ext.util.JSON.decode(response.responseText);
+		                     	storeNorma.loadData(obj);
+		                     	
+
+		                     }
+		          });
+		}
+
+	  function overrideStore(param){
+	  	storeNorma= new Ext.data.JsonStore({
+	    	url: 'consulta_norma.php?tipo=' +param,
+	    	root:'data',
+	    	fields: [
+	    	         {name:'id_norma', mapping:'id_norma',type:'string'},
+	    	         {name:'norma',mapping: 'norma',type:'string'},          	         
+	    	] ,
+	    	autoLoad:true,
+	    	listeners:{load:function(){
+	    		this.each(function(record, index){console.log(index)});
+
+	    	}}
+
+	    	
+		});
+	  }
+
+	  function calculateRange(tipo){
+	  		 var min, max;
+	  		 storeType.each(function(record, index){
+	  		 	 if(record.get('id_type') == tipo){
+	  		 	 	min = record.get('min');
+	  		 	 	max = record.get('max');
+	  		 	 }
+	  		 
+
+		  		 Ext.apply(Ext.form.VTypes,{  
+	    	  
+			    	 VRange: function(val, field){ 
+			    	 	if(val >= min && val <= max) 
+			    		 	return true;
+			    		else
+			    			return false;
+			    	 },
+			    	 VRangeText: 'Para este tipo de vehículo ha de ser entre ' + min +' y ' +max, //mensaje de error  
+			    	 VRangeMask: /[\d\.]/i
+			  
+			    });
+	  		});
+	  }
+
+ 		function calculateNorma(norma){
+
+	 	  	var valido = false;
+	 	  	 storeNorma.each(function(record, index){
+	  		 	if((record.get('id_norma') == norma) || (record.get('norma') == norma)) {
+	  		 	 	valido = true;
+	  		 	 }
+	  		 
+
+		  		 Ext.apply(Ext.form.VTypes,{  
+	    	  
+			    	 VNorma: function(val, field){ 
+			    	 	if(valido){
+			    		 return true;
+			    	 }
+			    	 else return false;
+			    	 },
+			    	VNormaText: 'Norma no válida para este tipo de vehículo', //mensaje de error  
+			    	VNormaMask: /[\d\.]/i
+			  
+			    });
+	  		});
+		}
+
 	  
 	  
 	  // Funcion importar unidades de transportes
@@ -585,11 +845,40 @@ Ext.onReady(function(){
 	      WImportarUt.show();
 	     	  
 	  } // end importarUt
+
+
+
+
+	
+
+	
 	 
 	// Formulario par registrar nuevas unidades de transportes    
 	
   function registraUt()
    {  
+   	 Ext.apply(Ext.form.VTypes,{  
+    	  
+		    	 VRange: function(val, field){ 
+		    	 if(val >= 1 && val <= 60) 
+		    		 return true;
+		    		else
+		    			return false;
+		    	 },
+		    	 VRangeText: 'Entre 1 y 60', //mensaje de error  
+		    	 VRangeMask: /[\d\.]/i
+		  
+	   });
+
+   	 	Ext.apply(Ext.form.VTypes,{  
+    	  
+    	     VNorma: function(val, field){ 
+  				return true;
+	    	 },
+	    	 VNormaText: 'Norma no válida para este tipo de vehículo', //mensaje de error  
+	    	 VNormaMask: /[\d\.]/i
+	  
+	    }); 
 	  
 	// Formulario para crear nuevas unidades de transportes
       var formNuevoUt = new Ext.FormPanel({ 
@@ -634,7 +923,47 @@ Ext.onReady(function(){
   			       
   			   },
   			   {name:'costeXkm',fieldLabel:'Coste/Km(€)',vtype:'alfa',width:'60px',vtype:'VEntero'},
-  			   {name:'costeXdia',fieldLabel:'Coste/dia(€)',vtype:'alfa',width:'60px',vtype:'VEntero'}
+  			   {name:'costeXdia',fieldLabel:'Coste/dia(€)',vtype:'alfa',width:'60px',vtype:'VEntero'},
+  			   {
+						   xtype:'combo',
+						   name:'tipo',
+						   emptyText: 'Selecciona el tipo de vehículo...',
+						   triggerAction: 'all',  				   
+						   fieldLabel:'Tipo vehículo',
+						   editable:false,
+						   forceSelection:true,  
+						   store:storeType,
+						   hiddenName: 'tipo',
+						   valueField: 'id_type',
+						   displayField:'tipo',
+						   listeners:{select:function(){
+						   	    formNuevoUt.getForm().findField('norma').focus();
+							   	formNuevoUt.getForm().findField('tonelaje').focus();
+							   } 
+						   } 
+					       
+				},
+				{name:'tonelaje',fieldLabel:'Tonelaje',vtype:'alfa',width:'60px',vtype:'VRange', listeners:{focus:setRange}},
+				{
+						   xtype:'combo',
+						   name:'norma',
+						   triggerAction: 'all',  				   
+						   fieldLabel:'Antigüedad del vehículo',
+						   editable:false,
+						   forceSelection:true,  
+						   store: storeNorma,
+						   hiddenName: 'norma',
+						   valueField: 'id_norma',
+						   displayField:'norma',
+						   vtype:'VNorma',
+						   listeners: {
+						     focus: function(){
+						     	setStoreNorma();
+						     },
+						     select: setStoreNorma
+						 }
+					       
+					   },
   			   ],
   		buttons:[{ 
                   text:'Guardar',
@@ -661,7 +990,10 @@ Ext.onReady(function(){
                                   nestacion_inicio   : extraeNombre(formNuevoUt.getForm().findField('estacionInicio')),
                                   nestacion_fin   : extraeNombre(formNuevoUt.getForm().findField('estacionFin')),
                                   coste_x_km   : formNuevoUt.getForm().getValues().costeXkm,
-                                  coste_x_dia   : formNuevoUt.getForm().getValues().costeXdia
+                                  coste_x_dia   : formNuevoUt.getForm().getValues().costeXdia,
+                                  tipo : formNuevoUt.getForm().getValues().tipo,                                   
+                                  tonelaje   : formNuevoUt.getForm().getValues().tonelaje,
+
                                   
                               });  
                           	// Insertamos nuevo registro en el store->grid
@@ -714,6 +1046,8 @@ Ext.onReady(function(){
   		] 
              });  
       
+	
+
       
       // Funcion auxiliar para extrar el name de un combo segun su id(valueField)
       function extraeNombre (combo) {
@@ -747,6 +1081,37 @@ Ext.onReady(function(){
  
 	  	     
 	        WCrearUt.show();
+
+	       function setStoreNorma(){
+			  var param = formNuevoUt.getForm().getValues().tipo;
+			  Ext.Ajax.request({  
+		                     url: 'consulta_norma.php?tipo=' +param,  
+		                     success: function(response)
+		                     {
+		                     	obj = Ext.util.JSON.decode(response.responseText);
+		                     	storeNorma.loadData(obj);
+		                     	setNorma();
+
+		                     }
+		          });
+
+	       }
+
+		
+
+	 	    function setNorma(){
+	  		  var norma = formNuevoUt.getForm().getValues().norma;
+	  		  calculateNorma(norma);
+
+	  		
+	 	   }
+
+
+	       function setRange(){
+	  		 var tipo = formNuevoUt.getForm().getValues().tipo;
+	  		 calculateRange(tipo);
+
+	 	   }
 	    }// fin de registraUt
 	    
 	//*****************************************************//    
@@ -772,8 +1137,9 @@ Ext.onReady(function(){
     	         {name:'lon',type:'string'},
     	         {name:'activo',type:'string'},
     	         {name:'direccion',type:'string'}     	         
-    	         ]
-    });
+    	         ] 
+	});
+
     storeEs.load();
     storeUt.load();
  // paginación para estaciones
@@ -820,11 +1186,36 @@ Ext.onReady(function(){
 		listeners : {
 			rowclick : function(grid,rowIndex,e){
 					var estacion = gridEs.getStore().getAt(rowIndex).data;
-					showMarker(estacion.lon, estacion.lat, estacion.direccion);
-				}
-			}
+					//showMarker(estacion.lon, estacion.lat, estacion.direccion);
+					var layers = []; 
+		            var markersCluster = markers.clusterGroup.getLayers();
+		            var markersNoCluster = markers.noClusterGroup.getLayers();
+
+		            // Recorrer cluster
+		            var i;
+		            for (i = 0; i < markersCluster.length; i++) {
+		               layers.push(markersCluster[i]);               
+		            }
+
+		            for (i = 0; i < markersNoCluster.length; i++) {
+		               layers.push(markersNoCluster[i]);
+		            }
+		            for(i= 0; i < layers.length;i++){
+						if(layers[i].feature.id == estacion.id_estaciones){	
+							map.setView(layers[i].getLatLng(),14);
+						}
+					}
+
+			},
+
+		}
+		
 
 	});
+
+
+	
+
 	
 	 // Elimina una estacion	
 	  function eliminarEs(grid, rowIndex, colIndex)
@@ -848,6 +1239,24 @@ Ext.onReady(function(){
 	        	    	     storeUt.reload();
 	        	    	     
 	        	    	  //   console.log(c1);
+	        	    	  var layers = []; 
+			            var markersCluster = markers.clusterGroup.getLayers();
+			            var markersNoCluster = markers.noClusterGroup.getLayers();
+
+			            // Recorrer cluster
+			            var i;
+			            for (i = 0; i < markersCluster.length; i++) {
+			               layers.push(markersCluster[i]);               
+			            }
+
+			            for (i = 0; i < markersNoCluster.length; i++) {
+			               layers.push(markersNoCluster[i]);
+			            }
+			            for(i= 0; i < layers.length;i++){
+							if(layers[i].feature.id == idt){	
+								markers.removeLayer(layers[i]);
+							}
+						}
 	        	    	     
 	        	    	     
 	                     },  
@@ -927,7 +1336,7 @@ Ext.onReady(function(){
 	    			     	 	},
 	    						{
 	    							xtype : "displayfield", 
-	    						    value:" Longuitud: ",
+	    						    value:" Longitud: ",
 	    						    width:60,
 	    						    style:'margin-top:4;'
 	    						    
@@ -970,6 +1379,8 @@ Ext.onReady(function(){
 	    	//storeEs.load();
 	    //	console.log(storeEs);	    	
 	    	WEditEs.close();
+	    	markers.unload();
+	    	markers.load();
 		}
 		   // Formulario par registrar nuevas unidades de transportes
 	    
@@ -1059,6 +1470,7 @@ Ext.onReady(function(){
 		                	else storeEs.getAt(index2).set('activo','f');	                    	
 	                        formEditEs.destroy();	                    	
 	                    	WEditEs.hide();
+
 	                    	
 	                    }
 	                }
@@ -1088,6 +1500,7 @@ Ext.onReady(function(){
 		  // cargamos el storeUt en el formulario
 		  formEditEs.getForm().loadRecord(fila2);
 		  WEditEs.show();
+
 		  
 	  } // end editarEs
 	  
@@ -1247,7 +1660,7 @@ Ext.onReady(function(){
 	    		defaultType:'textfield',
 	    		bodyStyle:'padding: 15px',
 	    		items:[
-	    			   {name:'nombre',fieldLabel:'Nombre',width:'322px'},
+	    			   {name:'nombre',id:'nombre',fieldLabel:'Nombre',width:'322px'},
 	    			   {xtype: 'spacer',height: 5},
 	    			   {xtype:'checkbox',name:'activo',fieldLabel:'Activo'},
 	    			   {xtype: 'spacer',height: 5},
@@ -1331,6 +1744,28 @@ Ext.onReady(function(){
 	                                    buttons: Ext.Msg.OK,
 	                                    icon: 'icoOK'                                
 	                                 });
+
+							       if(markerClick){
+			                    		map.removeLayer(markerClick);
+		                    		}
+		                    		map.off('click');
+							        var feature = {
+											type: 'Feature',
+											id: obj.datos.id,
+											geometry:{
+												type: 'Point',
+												coordinates:[markerClick.getLatLng().lng, markerClick.getLatLng().lat]
+											},
+											properties:{
+												nombre: formNuevoEs.getForm().getValues().nombre,
+												activo: vactivo,
+												direccion: formNuevoEs.getForm().getValues().direccion,
+											}
+											
+									}
+
+
+      								 markers.addMarkerFromFeature(feature);
 	                            },
 	     
 	                            failure:function(form, action){ 
@@ -1362,7 +1797,11 @@ Ext.onReady(function(){
 	                    handler:function(){
 	                    	formNuevoEs.destroy();
 	                    	WCrearEs.hide();
-	                    	 
+	                    	if(markerClick){
+	                    		map.removeLayer(markerClick);
+	                    		markerClick = null;
+                    		}
+                    		map.off('click');
 	                    }
 	                }
 	    		] 
@@ -1421,9 +1860,10 @@ Ext.onReady(function(){
 	       format:'H:i',  
 	       name:'hora',
 	       editable:false,
-	       value:'00:00',
+	       value:'h:i',
 	       name: 'horaInicio',
-           id: 'horaInicio'
+           id: 'horaInicio',
+           value:new Date()
 	  });
 	    
 	    var FormCalcRuta = new Ext.FormPanel({ 
@@ -1511,23 +1951,63 @@ Ext.onReady(function(){
                      }]
                });  
 	    
-	   var activosE=new Array(); // Array con las estaciones activas(por donde debe pasar)
-	   var activosUt=new Array(); // Array de transportes activos(transportes a usar)
-	   var datosRutas=new Array(); // Array para el grid, para la representación de los resultados
+	  
 	   
 	   
 	   // Función que calcula la ruta(secuencias de estaciones) recibe la fecha y hora de inicio
 	   
 	    function calculo(fecha,hora)
-	    {
+	    {	
+	    	vehiculos = {};
+	    	//gridResRutas.hide();
+	    	if(vector && vector._map){
+		  	      	vector.onRemove(map);
+		  	 }
+	    	 markers.deleteTree = true;
+	    	 map.removeLayer(markers);
+	    	 markers =  new SMC.layers.markers.MarkerLayer({
+				label: 'Estaciones actuales',
+				stylesheet: stylesheetStations
+			});
+	    	markers.load = function(){
+
+				$.ajax({
+					type: "GET",
+					url: 'consulta_estaciones.php',
+					success: function(response){
+						var features = response.data;
+						for(var f in features){
+							features[f] = {
+								type: 'Feature',
+								id: features[f].id_estaciones,
+								geometry:{
+									type: 'Point',
+									coordinates:[features[f].lon, features[f].lat]
+								},
+								properties:{
+									nombre: features[f].nombre,
+									activo: features[f].activo,
+									direccion: features[f].direccion
+								}
+								
+							}
+						}
+						markers.addMarkerFromFeature(features);
+					}
+				})
+			}
+		    map.addLayer(markers);
 	    	
 	    	 console.log("Borrado de mascaras en mapa");
-	 	     cleanRoutes();	 	   
+	    	  var activosE=new Array(); // Array con las estaciones activas(por donde debe pasar)
+	  		 var activosUt=new Array(); // Array de transportes activos(transportes a usar)
+	  	     arrTrans = [];
+	 	     //cleanRoutes();	 	   
 	    	 activosE=new Array(); 
 	    	 //console.log(storeEs);
 	    	 // creamos el array de objetos de estaciones activas, el índice del array es autonumerico (NO TOCAR)
 	    	// console.log("EN CALCULO:" + storeEs.getAt(13).get('nombre') + "=" + storeEs.getAt(13).get('activo'));
-	    	 var i=0;
+	    	
 	    	 var ji="";
 	    	 console.log("EN BUCLE:" );
 	    	 storeEs.each(function(record,index)
@@ -1537,14 +2017,14 @@ Ext.onReady(function(){
   				         if(record.get('activo')!='t') var ji=""; 
   				         else
   				    	   {	  				        	
-  				        	  activosE[i]=  				        	  
+  				        	  activosE.push(  				        	  
   				        	  {
   									id_estaciones: record.get('id_estaciones'),
   									nombre:record.get('nombre'),
   									lat:record.get('lat'),
   									lon:record.get('lon')
-  								};
-  				        	  i++;
+  								});
+  				        	 
   								  
   				    	   }
   		    	 
@@ -1569,12 +2049,12 @@ Ext.onReady(function(){
 	    	 
 	    	 
 	    	 // Solo para TSP(1 unico transporte, primero del store que este activo)	    	
-	    	 var i=0;
+	    	
 	    	 storeUt.each(function(record,index)
 	  		    		{  	  		    	        	  		    	       
 	  				         if(record.get('activo')=='t')   
 	  				    	   {	  		  				        	 
-	  				        	 activosUt[i]=  				        	  
+	  				        	 activosUt.push( 				        	  
 	  				        	  {
 	  				        			id_transportes: record.get('id_transportes'),
 	  									nombre:record.get('nombre'),
@@ -1582,12 +2062,12 @@ Ext.onReady(function(){
 	  									estacionFin:record.get('estacionFin'),
 	  									coste_x_dia:record.get('coste_x_dia'),
 	  									coste_x_km:record.get('coste_x_km')
-	  								};
+	  								});
 	  				        	     // Solo para el TSP, cortamos en el primer transporte	  				        	     
-	  				        	     return false; // cortamos each para devolver el primer transporte activo(tsp)
+	  				        	     //return false; // cortamos each para devolver el primer transporte activo(tsp)
 	  				        	     // Fin solo para TSP	  				        	      
 	  				    	   }
-	  				           i++;	  				       
+	  				           	  				       
 	  		    	 
 	  		    		});
 	    	
@@ -1609,39 +2089,104 @@ Ext.onReady(function(){
 	    	 
 	    	 // En activosE y activosUt tenemos arrays(de objetos) con las estaciones y transportes activos
 	    	 
-	  
-	    	      
-	    	      
-	    	 
-	    	   
-	  
-	    	      
-	    	      // Llamada a Ajax enviando los datos necesarios para el cáculo
-	    	      //var dataObj=activosUt.concat(activosE);
-	    	      var dataObj=new Array(4);
-	    	      dataObj[0]=Ext.util.Format.date(fecha,"d/m/Y");
-	    	      dataObj[1]=hora;
-	    	      dataObj[2]=activosUt; // se envia los transportes activos
-	    	      dataObj[3]=activosE; // se envia las estaciones activas
-	    	      
+	    	 	 var stops = new Array(activosE.length);
+	    	 	 for(var e = 0;e < activosE.length; e++){
+	    	 	 	stops[e]= {};
+	    	 	 	stops[e].id = activosE[e].id_estaciones;
+	    	 	 	stops[e].name = activosE[e].nombre;
+	    	 	 	stops[e].latitude = activosE[e].lat;
+	    	 	 	stops[e].longitude = activosE[e].lon; 
+	    	 	 }
+
+	    	 	 var vehicles = new Array(activosUt.length);
+	    	 	 for( var v = 0; v < activosUt.length; v++){
+	    	 	 	vehicles[v] = {};
+	    	 	 	vehicles[v].id = activosUt[v].id_transportes;
+	    	 	 	vehicles[v].name = activosUt[v].nombre;
+	    	 	 	for(var i in activosE){
+	    	 	 		if(activosE[i].id_estaciones == activosUt[v].estacionInicio){
+	    	 	 			vehicles[v].origin = stops[i];
+	    	 	 		}
+	    	 	 		if(activosE[i].id_estaciones == activosUt[v].estacionFin){
+	    	 	 			vehicles[v].target = stops[i];
+	    	 	 		}
+	    	 	 	}
+	    	 	 	vehicles[v].costPerDistance = activosUt[v].coste_x_km;
+	    	 	 	vehicles[v].costPerTime = activosUt[v].coste_x_dia;
+
+	    	 	 }
+	    	     
+	    	    
+
 	    	      Ext.Ajax.request({
 	    	    	  url: 'calculo.php',
-	    	    	  jsonData: Ext.util.JSON.encode(dataObj),
+	    	    	  jsonData: Ext.util.JSON.encode({fecha: fecha, hora: hora, vehicles:vehicles, stops: stops}),
 	    	    	  success: function(action) 
 	    	    	  { 	 
-	    	    		  Ext.MessageBox.hide(); // Eliminamos el mensaje de calculando..	
+	    	    		  Ext.MessageBox.hide(); // Eliminamos el mensaje de calculando..
+	    	    		  
 	    	    		  obj = Ext.util.JSON.decode(action.responseText);
 	    	    		  if(obj.success)
 	    	    		  {
-	    	    			  
-	    	    			 var datosJson=obj.datos; // se tiene el json	    	    			   
-	    	    			 // console.log(datosJson);
-	    	    			 storeRutas.loadData(datosJson);
-	    	    			 // se debe grabar en el store de las rutas almacenadas y en la busqueda de fechas
-	    	    			 storeFechasRes.load();
-	    	    			 storeFechas.load();
-	    	    			 // console.log(storeRutas);
-	    	            	 gridRuta.show();
+	    	    			
+
+
+	    	            	 Ext.Ajax.request({
+					  	    	  url: 'recupera_ruta.php',
+					  	    	  params: { id_ruta: obj.idRuta },
+					  	    	  success: function(action) 
+					  	    	  { 	 
+					  	    		  Ext.MessageBox.hide(); // Eliminamos el mensaje de calculando..	
+					  	    		  obj = Ext.util.JSON.decode(action.responseText);
+					  	    		  if(obj.success)
+					  	    		  {  	
+
+					  	    		  	 Ext.Ajax.request({  
+						                     url: 'consulta_transportes.php',  
+						                     
+						                     success: function(response)
+						                     {
+						                     	var d = new Date(Ext.getCmp('fechaInicio').getValue());
+	    										hora_inicio = (d.getMonth()+1)+'/' +d.getDate() +'/' + d.getFullYear() +' ' + Ext.getCmp('horaInicio').getValue();
+						                    	 var transportes = Ext.util.JSON.decode(response.responseText);
+						                    	 var datosJson=obj.datos; // se tiene el json
+						                    	 for(var i = 0; i < datosJson.datos.length; i++){
+						                    	 	for(var t = 0; t < transportes.data.length; t++){
+						                    	 		if(transportes.data[t].id_transportes == datosJson.datos[i].idtransporte){
+						                    	 			datosJson.datos[i].coste_vehiculo = transportes.data[t].coste_x_dia;
+						                    	 			datosJson.datos[i].tipo_vehiculo = transportes.data[t].tipo;
+						                    	 			datosJson.datos[i].tonelaje_vehiculo = transportes.data[t].tonelaje;
+						                    	 			datosJson.datos[i].norma_vehiculo = transportes.data[t].norma;
+						                    	 		}
+						                    	 	}
+						                    	 }	    	    			   
+							  	    			 storeRutas.loadData(datosJson); 
+							  	    			 drawRoute(datosJson); 	    			 
+							  	          	     storeFechasRes.load();
+			    	            	 			 storeFechas.load();
+			    	            	 			 var summary = new Ext.ux.grid.GroupSummary(); 
+			    	            	 			 summary.init(gridRuta);
+			    	            	 			 gridRuta.plugins.push(summary);
+			    	            	 			 gridRuta.getView().refresh();
+			    	            	 			 storeEcocostes.removeAll();
+			    	            	 			 gridRuta.show();
+			    	            	 			 panelEco.store.removeAll();
+			    	            	 			 panelEco.show();        	   
+							  	          	     
+							  	                 Ext.MessageBox.hide();			 
+						                     } 
+						                 });
+	                    
+
+					  	    			 
+					  	                
+					  	    		  }
+					  	    		}
+					  	   
+	    	            	
+	    	            	  }); 
+	    	            	
+
 	    	                
 	    	    		  }
 	    	    		  else
@@ -1660,7 +2205,7 @@ Ext.onReady(function(){
 	                           });
 	                          }    
 	    	    		  }
-	    	    		  
+	    	    		 
 	    	    	  },
 	    	    	  failure:function(){ 
 	                        
@@ -1679,14 +2224,47 @@ Ext.onReady(function(){
 	    function escribeTrayecto(value, metaData, record, rowIndex, colIndex, store)
 		{	//alert(record.get('activo'));	
 			
-	    	var paso=storeRutas.getAt(rowIndex).get('objFin').nombre; // nombre estacion de paso	    	
-	    	return value.nombre + "->" + paso;
+	    	if(rowIndex >= 0){
+		    	var paso=storeRutas.getAt(rowIndex).get('objFin').nombre; // nombre estacion de paso	    	
+		    	return value.nombre + "->" + paso;
+		    }
+		    else{
+		    	return 'TOTAL (añadido coste/día)';
+		    }
 	    	
 		}
 	    
-	        
+	     function sumCoste(value, metaData, record, rowIndex, colIndex, store){
+			var coste_dia = record.data.coste_dia;
+			var transporte = record.data.transporte;
+			value = value + (coste_dia * vehiculos[transporte].fechas.length);
+			value = value.toFixed(2);
+	    	return value + " €";
+				
+		}  
 	 
-
+	 	
+		function getIndex(value){
+	    	var trans = value.transporte;
+	    	var exist= false;
+	    	if(arrTrans.length == 0){
+	    		arrTrans.push(trans);
+	    		return 0;
+	    	}
+	    	for(var t in arrTrans){
+	    		if(arrTrans[t] == trans){
+	    			exist= true;
+	    			
+	    		} 
+	    	}
+	    	if(!exist){
+	    		arrTrans.push(trans);
+	    		return 0;
+	    	}
+	    	else{
+	    		return 1;
+	    	}
+		}
     
 	 // JsonReader readResponse FIX
         
@@ -1705,10 +2283,13 @@ Ext.onReady(function(){
 						{name: 'km',mapping: 'km', type: 'float'},	       
 						{name: 'transporte',mapping: 'transporte',type: 'string'},
 						{name: 'idtransporte',mapping: 'idtransporte',type: 'float'},
-						{name: 'pasos',mapping: 'pasos',type: 'object'}
-						
-						
-						
+						{name: 'pasos',mapping: 'pasos',type: 'object'},
+						{name: 'coste_vehiculo',mapping: 'coste_vehiculo', type: 'float'},
+						{name: 'tipo_vehiculo',mapping: 'tipo_vehiculo', type: 'string'},
+						{name: 'tonelaje_vehiculo',mapping: 'tonelaje_vehiculo', type: 'float'},
+						{name: 'norma_vehiculo',mapping: 'norma_vehiculo', type: 'string'},
+						{name: 'groupIndex', mapping: getIndex, type: 'float'},
+				
 	        ]
 	    });
 	    
@@ -1721,22 +2302,60 @@ Ext.onReady(function(){
 	        });
 	    
 	  
-	    
-	    function Coste(value)
+	    var vehiculos = {};
+	    function Coste(value, metaData, record, rowIndex, colIndex, store)
 	    {
+	    	
+			if(rowIndex >= 0){
+				
+		    	var fecha=storeRutas.getAt(rowIndex).get('hora'); 
+		    	fecha = fecha.split(' ')[0];
+		    	var transporte=storeRutas.getAt(rowIndex).get('transporte');
+		    	if(!vehiculos[transporte]) 
+		    		vehiculos[transporte] = {fechas:[]};   	
+		    	
+		    	if(vehiculos[transporte].fechas.length == 0){
+		    		vehiculos[transporte].fechas.push(hora_inicio.split(' ')[0]);
+		    	}
+		    	
+		    		var exit;
+		    		for(var f in vehiculos[transporte].fechas){
+		    			if(vehiculos[transporte].fechas[f] == fecha){
+		    				exit = true;
+		    			}
+		    		}
+		    		if(!exit){
+		    			vehiculos[transporte].fechas.push(fecha);
+		    		}
+		    	
+		    
+		    }
+	    	value = value.toFixed(2);
 	    	return value + " €";
 	    }
 	    
 	    function Km(value)
 	    {
+    		value = value.toFixed(2);
 	    	return value + " Km";
 	    }
 	    function Ehora(value)
 	    {
-	    	return value + "h";
+	    	var d = new Date(Date.parse(value));
+	    	var hh= d.getHours();
+	    	var mm= d.getMinutes();
+	    	if(mm< 10){
+	    		mm = '0'+mm;
+	    	}
+	    	if(hh < 10){
+	    		hh = '0'+hh;
+	    	}
+	    	return d.getDate() +"/" +(d.getMonth()+1) +"/"+ d.getFullYear() +"  "+ hh +":"+mm+ "h";
 	    }
 	    var gridRuta = new Ext.grid.GridPanel({
 	        store: storeRutas,
+	       plugins	: [],
+
 	        columns: [	                   
 	            {
 	            	id:'paso',
@@ -1744,14 +2363,22 @@ Ext.onReady(function(){
 	            	width: 60, 
 	            	sortable: true, 
 	            	dataIndex: 'objInicio',
-	            	renderer:escribeTrayecto
+	            	renderer: escribeTrayecto,
+	            	summaryRenderer:escribeTrayecto
+	            	
+	            	
           		}
 	            ,
-	            {header: "Hora", width: 30, sortable: true, renderer:Ehora, dataIndex: 'hora'},
-	            {header: "Coste", width: 20, sortable: true, renderer: Coste, dataIndex: 'coste'},
-	            {header: "Distancia", width: 20, sortable: true, dataIndex: 'km', renderer: Km},
-	            {header: "Vehículo", width: 0, sortable: true, dataIndex: 'transporte',hidden:true}
-	            
+	            {header: "Hora", width: 30, sortable: true, renderer:Ehora, dataIndex: 'hora', summaryType: 'max',  summaryRenderer:Ehora},
+	            {header: "Coste", width: 20, sortable: true, renderer: Coste, dataIndex: 'coste', summaryType: 'sum',  summaryRenderer: sumCoste},
+	            {header: "Distancia", width: 20, sortable: true, dataIndex: 'km', renderer: Km, summaryType: 'sum',  summaryRenderer: Km},
+	            {header: "Vehículo", width: 0, sortable: true, dataIndex: 'transporte',hidden:true, summaryType: 'transport'},
+	            {header: "Coste_dia", width: 0, sortable: true, dataIndex: 'coste_dia',hidden:true, summaryType: 'cost'},
+	            {header: "Tipo_vehiculo", width: 0, sortable: true, dataIndex: 'tipo_vehiculo',hidden:true, summaryType: 'tipo'},
+	            {header: "Tonelaje_vehiculo", width: 0, sortable: true, dataIndex: 'tonelaje_vehiculo',hidden:true, summaryType: 'tonelaje'},
+	            {header: "Norma", width: 0, sortable: true, dataIndex: 'norma_vehiculo',hidden:true, summaryType: 'norma'},
+	            {header: "GroupIndex", width: 0, sortable: true, dataIndex: 'groupIndex',hidden:true},
+	          
 	        ],
 
 	        view: new Ext.grid.GroupingView({
@@ -1764,12 +2391,12 @@ Ext.onReady(function(){
 	    		startCollapsed: true,		// the groups start closed
 	            groupTextTpl: '{text} ({[values.rs.length]} {[values.rs.length > 1 ? "Pasos" : "Paso"]})'
 	        }),
-
-	        frame:true,
+			frame:true,
 	        width: 570,
-	        height: alto - 100,
+	        height: 370,
 	        collapsible: false,
 	        animCollapse: false,
+	        //autoHeight:'auto',
 	        title: 'Cálculo de Rutas',
 	        iconCls: 'icon-grid'
 	      
@@ -1778,6 +2405,10 @@ Ext.onReady(function(){
 	    // click de un paso a otro
 	    gridRuta.on('rowclick', function(grid, rowIndex, columnIndex, e) { 
 	    	
+	    	var groupIndex = storeRutas.getAt(rowIndex).get('groupIndex');
+	    	tipoV = storeRutas.getAt(rowIndex).get('tipo_vehiculo');
+	    	tonelajeV = storeRutas.getAt(rowIndex).get('tonelaje_vehiculo');
+	    	normaV = storeRutas.getAt(rowIndex).get('norma_vehiculo');
 	        //console.log("Indice del store: " + rowIndex);
 	    	var inicio=storeRutas.getAt(rowIndex).get('objInicio');
 	    	var fin=storeRutas.getAt(rowIndex).get('objFin');
@@ -1786,19 +2417,39 @@ Ext.onReady(function(){
 	    	
 	    	//console.log(inicio);
 	    	//console.log(fin);
-	    	drawSection(inicio,fin,pasos);
+	    	zoomSection(inicio,fin,pasos);
+	    	var distance=storeRutas.getAt(rowIndex).get('km');
+	    	var timeFinal=storeRutas.getAt(rowIndex).get('hora');
+	    	var timeIni;
+	    	if(rowIndex > 0){
+	    		timeIni = storeRutas.getAt(rowIndex -1).get('hora');
+	    	}
+	    	if(groupIndex == 0){
+	    		timeIni = hora_inicio;
+	    	}
+	   		getEco(distance, timeFinal, timeIni, tipoV, tonelajeV, normaV);
 	    	     
 	    
 	    });
 	    
 	   // click en una ruta completa de un transporte
 	    gridRuta.on('groupclick', function(grid, groupField, value, e) {
-	    	
+	    	var timeFinal;
+	    	var distance = 0;
 	    	var rutaT=new Array(); // se crea variable temporal que contendrá objetos de tipo estaciones que será el que se pase al metodo
 	    	                       // pintar ruta
 	    	var tmpRutaT=new Array();
-	    	// Se busca los records afectados por ese record(nombre transporte) del store de rutas	    	 
-	    	 var c1 = storeRutas.queryBy(function(record,id) {      	    	 
+	    	
+	    	// Se busca los records afectados por ese record(nombre transporte) del store de rutas	 
+	    	  	 
+	    	 var c1 = storeRutas.queryBy(function(record,id) { 
+	    	 if(record.get('transporte')==value){
+			    	 timeFinal = record.get('hora');
+			    	 distance += record.get('km'); 
+			    	 tipoV = record.get('tipo_vehiculo');
+			    	 tonelajeV = record.get('tonelaje_vehiculo'); 
+			    	 normaV = record.get('norma_vehiculo');
+			     }      	    	 
     	         return record.get('transporte')==value;  
     	     }); 
 	    	 var tot=c1.length;
@@ -1815,7 +2466,8 @@ Ext.onReady(function(){
 	    				// si hay pasos(no estaciones) creamos objetos estaciones sin id para saber q es paso
 	    			{
 	    			   
-	    			   pasos=item.get('pasos');	    			   
+	    			   pasos=item.get('pasos');	
+	    			   pasos = Ext.util.JSON.decode(pasos[0]);   			   
 	    			   for(var i=0;i<pasos.length;i++)
 	    			   {
 	    				 
@@ -1823,8 +2475,8 @@ Ext.onReady(function(){
 	    			       	  var estacion={
 	    			       			                   id_estaciones:0,
 	    			       			                   nombre:'',
-	    			       			                   lat: pasos[i].split(",")[0],
-	    			       			                   lon: pasos[i].split(",")[1]	    			       			                   
+	    			       			                   lat: pasos[i][1],
+	    			       			                   lon: pasos[i][0]	    			       			                   
 	    			       	                        }
 	    			       	 j++;  
 	    			       	 rutaT[j]=estacion;
@@ -1834,24 +2486,20 @@ Ext.onReady(function(){
 	    			j++; 
 	    			if(index==(tot-1)) 	rutaT[j]=item.get('objFin');
 	    				
-	    				
-		    		 
-                    // Ahora se pasa un array de arrays, en cada posicion		    		 
-	    			 //rutaT[index]=item.get('objInicio');
-	    			// if(index==(tot-1)) rutaT[index+1]=item.get('objFin');	    			  
+    			  
 	    			 
 	    		 },this);
 	    	 }
-    	  //    console.log(rutaT);		    	 
-	    	 // Pasamos un array de estaciones para pintar la ruta completa (tanto estaciones como pasos en orden)
-	    	 // Las estaciones llegan un id,nombre en el objeto estaciones y los pasos con id=0 y nombre vacio
-    	    drawRoute(rutaT);
+
+    	    zoomRoute(rutaT);
+    	    getEco(distance, timeFinal, hora_inicio, tipoV, tonelajeV, normaV);
 	    		
        });
 	    
 	    
        // inicialmente no hay calculo
-	   gridRuta.hide();
+
+	  gridRuta.hide();
 	    
 	  
 	  
@@ -1887,11 +2535,14 @@ Ext.onReady(function(){
 	   
 	    function escribeHora(value, metaData, record, rowIndex, colIndex, store)
 		{	//alert(record.get('activo'));	
-				    		    	
+			    		    	
 	    	return value + "h";
 	    	
 		}
-	    
+		 function escribeFecha(value, metaData, record, rowIndex, colIndex, store){
+		    var d = new Date(Date.parse(value));
+		    return d.getDate() +"/" +(d.getMonth()+1) +"/"+ d.getFullYear();
+	    }
 	    
 	    function verRuta(grid, rowIndex, colIndex)
 	    {
@@ -1905,13 +2556,13 @@ Ext.onReady(function(){
 			store: storeFechasRes,						
 			frame:true,
 	        width: 570,
-	        height:200,
+	        height:130,
 	        border: false,
 	        bodyBorder:false,
 	        hideHeaders: true,
 	        stripeRows: true,
-		    autoExpandColumn:'horaRes',
-			layout: 'fit', // para ajustar a todo el tamaño del panel
+		    //autoExpandColumn:'horaRes',
+			//layout: 'fit', // para ajustar a todo el tamaño del panel
 			columns: [	
 				{
 					id:'spacer',					 
@@ -1923,16 +2574,17 @@ Ext.onReady(function(){
 			  		header:'Fecha',
 			  		dataIndex:'fecha',
 			  		name: 'fechaRes',
-			  		width:85,
+			  		width:210,
 			  		sortable: true,			  		
-			  		style:"font-weight: bold;"
+			  		style:"font-weight: bold;",
+			  		renderer: escribeFecha
 			  	},
 			  	{
 			  		id:'horaRes',
 			  		header:'Hora',
 			  		dataIndex:'hora',
 			  		name: 'horaRes',
-			  		width:20,
+			  		width:300,
 			  		sortable: true,			  		
 			  		style:"font-weight: bold;",
 			  		renderer: escribeHora
@@ -1980,7 +2632,7 @@ Ext.onReady(function(){
 						displayField:'fecha',
 					    //hideTrigger:true,  
 					    editable:false, 
-					    width:125,
+					    width:130,
 					    listeners: {
 					        select: function(combo, record, index) 
 					        {
@@ -1999,6 +2651,7 @@ Ext.onReady(function(){
 	    
   // RESULTADOS DE CLICK EN EL GRID DE FECHAS
 	    var rutaSeleccionada=0;
+	   
 	    // El click en una fila del grid
 	    gridFechasRes.on('rowclick', function(grid, rowIndex, columnIndex, e) {
 	    	console.log("Borrando pintados..");
@@ -2006,11 +2659,22 @@ Ext.onReady(function(){
 	    	// Se tiene el index del store y sus valores
 	    	//console.log(storeFechasRes.getAt(rowIndex).get("idRuta"));
 	    	// recuperamos la ruta seleccionada
+	    	hora_inicio = storeFechasRes.getAt(rowIndex).get("fecha") +' '+ storeFechasRes.getAt(rowIndex).get("hora");
+	    	arrTrans = [];
+
 	    	var idruta=storeFechasRes.getAt(rowIndex).get("idRuta");
 	    	rutaSeleccionada=idruta;
 	    	// Esperar a la carga y mostrar resultados
-	    	PResRutas.hide();
-	    	
+	    	//PResRutas.hide();
+
+	    	if(vector && vector._map){
+	  	      	vector.onRemove(map);
+	  	    }
+	  	    if(map){
+	  	    	map.setView(center, zoom);
+	  	    	
+	  	    }
+
 	    	Ext.MessageBox.show({					                            		
                 msg: 'Espere por favor ...',					                                    					                                   			                                  
                 closable:false,	
@@ -2026,30 +2690,131 @@ Ext.onReady(function(){
   	    		  Ext.MessageBox.hide(); // Eliminamos el mensaje de calculando..	
   	    		  obj = Ext.util.JSON.decode(action.responseText);
   	    		  if(obj.success)
-  	    		  {  	    			  
-  	    			 var datosJson=obj.datos; // se tiene el json	    	    			   
-  	    			 storeResRutas.loadData(datosJson);  	    			 
-  	          	     PResRutas.show();  	          	   
-  	          	     gridResRutas.setTitle("Cálculo de Rutas de " + storeFechasRes.getAt(rowIndex).get("fecha") );
-  	                 Ext.MessageBox.hide();	
-  	                
-  	    		  }
-  	    		  else
-  	    		  {
-  	    			  if(obj.errores.razon=='false') // usuario no logeado
-                        {	                            	
-                       	 desconectar();
-                        }
-                        else
-                        {
-                        Ext.Msg.show({
-                            title:'Aviso',
-                            msg:obj.errores.razon,
-                            buttons: Ext.Msg.OK,
-                            icon: Ext.Msg.WARNING
-                         });
-                        }    
-  	    		  }
+  	    		  {  
+  	    		  	vehiculos = {};
+  	    		   Ext.Ajax.request({  
+		                     url: 'consulta_transportes.php',  
+		                     
+		                     success: function(response)
+		                     {
+		                    	 var transportes = Ext.util.JSON.decode(response.responseText);
+		                    	 var datosJson=obj.datos; // se tiene el json
+		                    	 for(var i = 0; i < datosJson.datos.length; i++){
+		                    	 	for(var t = 0; t < transportes.data.length; t++){
+		                    	 		if(transportes.data[t].id_transportes == datosJson.datos[i].idtransporte){
+		                    	 			datosJson.datos[i].coste_vehiculo = transportes.data[t].coste_x_dia;
+		                    	 			datosJson.datos[i].tipo_vehiculo = transportes.data[t].tipo;
+		                    	 			datosJson.datos[i].tonelaje_vehiculo = transportes.data[t].tonelaje;
+		                    	 			datosJson.datos[i].norma_vehiculo = transportes.data[t].norma;
+		                    	 		}
+		                    	 	}
+		                    	 }	    			  
+	  	    				    	    			   
+			  	    			 storeResRutas.loadData(datosJson);  
+			  	    			 drawRoute(datosJson); 	
+			  	    			 PResRutas.show(); 
+							   	 gridResRutas.show();
+							   	 panelEco.store.removeAll();
+							   	
+	         	   
+			  	          	     gridResRutas.setTitle("Cálculo de Rutas de " + storeFechasRes.getAt(rowIndex).get("fecha") );
+			  	                 Ext.MessageBox.hide();	
+
+			  	                 var estaciones = [];
+						    	 var c1 = storeResRutas.queryBy(function(record,id) {      	    	 
+					    	         return record.get('transporte');  
+					    	     }); 
+						    	 var tot=c1.length;
+
+						    	 if(tot>0)
+						    	 {
+						    		
+						    		 c1.each(function(item,index)
+						    	     {
+						    			
+						    			var origin = item.get('objInicio'); 
+						    			var target = item.get('objFin'); 
+						    			if(estaciones.length == 0){
+						    				estaciones.push(origin);   		 
+						    			}
+						    			var exitsOrigin, exitsTarget;
+						    			for(var e= 0; e < estaciones.length; e++){
+						    				if(estaciones[e].id_estaciones == origin.id_estaciones){
+						    					exitsOrigin = true;
+						    				}
+						    				if(estaciones[e].id_estaciones == target.id_estaciones){
+						    					exitsTarget = true;
+						    				}
+						    			}
+						    			if(!exitsOrigin){
+						    				estaciones.push(origin); 
+						    			}
+						    			if(!exitsTarget){
+						    				estaciones.push(target); 
+						    			}
+						    				    			  
+						    			 
+						    		 },this);
+						    		
+						    	 }
+
+						    	 markers.deleteTree = true;
+						    	 map.removeLayer(markers);
+						    	 markers =  new SMC.layers.markers.MarkerLayer({
+									label: 'Estaciones de la ruta',
+									stylesheet: stylesheetStations
+								});
+				    	
+								markers.load = function(){
+									var features = [];
+									
+									for(var f= 0; f < estaciones.length; f++){
+			
+										
+										features[f] = {
+											type: 'Feature',
+											id: estaciones[f].id_estaciones,
+											geometry:{
+												type: 'Point',
+												coordinates:[estaciones[f].lon, estaciones[f].lat]
+											},
+											properties:{
+												nombre: estaciones[f].nombre,
+												activo: 't',
+		
+											}
+											
+										}
+										
+										
+									}
+									markers.addMarkerFromFeature(features);
+							   				
+							   	};
+
+							   	map.addLayer(markers);
+							   	map.fire('resize');
+							   	gridRuta.hide();
+							}
+					   });
+	  	                
+	  	    		  }
+	  	    		  else
+	  	    		  {
+	  	    			  if(obj.errores.razon=='false') // usuario no logeado
+	                        {	                            	
+	                       	 desconectar();
+	                        }
+	                        else
+	                        {
+	                        Ext.Msg.show({
+	                            title:'Aviso',
+	                            msg:obj.errores.razon,
+	                            buttons: Ext.Msg.OK,
+	                            icon: Ext.Msg.WARNING
+	                         });
+	                        }    
+	  	    		  }
   	    		  
   	    	  },
   	    	  failure:function(){ 
@@ -2061,32 +2826,95 @@ Ext.onReady(function(){
   	    	  
   	    	  });
 	    	
-	    	
-             
-             
-            
-	    	
-	    	
+ 	
         }, this);
+
+	 function escribeTrayectoRes(value, metaData, record, rowIndex, colIndex, store)
+		{	//alert(record.get('activo'));	
+			
+	    	if(rowIndex >= 0){
+		    	var paso=storeResRutas.getAt(rowIndex).get('objFin').nombre; // nombre estacion de paso	    	
+		    	return value.nombre + "->" + paso;
+		    }
+		    else{
+		    	return 'TOTAL (añadido coste/día)';
+		    }
+	    	
+		}
+
+	 function CosteRes(value, metaData, record, rowIndex, colIndex, store)
+	    {
+	    	
+			if(rowIndex >= 0){
+				
+		    	var fecha=storeResRutas.getAt(rowIndex).get('hora'); 
+		    	fecha = fecha.split(' ')[0];
+		    	var transporte=storeResRutas.getAt(rowIndex).get('transporte');
+		    	if(!vehiculos[transporte]) 
+		    		vehiculos[transporte] = {fechas:[]};   	
+		    	
+		    	if(vehiculos[transporte].fechas.length == 0){
+		    		vehiculos[transporte].fechas.push(hora_inicio.split(' ')[0]);
+		    	}
+		    	
+		    		var exit;
+		    		for(var f in vehiculos[transporte].fechas){
+		    			if(vehiculos[transporte].fechas[f] == fecha){
+		    				exit = true;
+		    			}
+		    		}
+		    		if(!exit){
+		    			vehiculos[transporte].fechas.push(fecha);
+		    		}
+		    	
+		    
+		    }
+	    	value = value.toFixed(2);
+	    	return value + " €";
+	    }
+		
+
+		function horaIni(value, metaData, record, rowIndex, colIndex, store){
+			  return hora_inicio;
+		}
+
+
+		var summaryRes = new Ext.ux.grid.GroupSummary();
+		Ext.ux.grid.GroupSummary.Calculations['transport'] = function(v, record, field){
+	        return record.data.transporte;
+	    };
+	    Ext.ux.grid.GroupSummary.Calculations['cost'] = function(v, record, field){
+	        return record.data.coste_vehiculo;
+	    };
+	     Ext.ux.grid.GroupSummary.Calculations['tipo'] = function(v, record, field){
+	        return record.data.tipo_vehiculo;
+	    };
+	     Ext.ux.grid.GroupSummary.Calculations['tonelaje'] = function(v, record, field){
+	        return record.data.tonelaje_vehiculo;
+	    };
+	     Ext.ux.grid.GroupSummary.Calculations['norma'] = function(v, record, field){
+	        return record.data.norma_vehiculo;
+	    };
+
 	    
-	   
+
+	    
+	    
+	
 	    var storeResRutas = new Ext.data.GroupingStore({	    	   
             reader: myReader,	      	     	         
             //sortInfo:{field: 'paso', direction: "ASC"},
-            groupField:'transporte'
+            groupField:'transporte',
+
         });
 	    
-	    function escribeTrayectoRes(value, metaData, record, rowIndex, colIndex, store)
-		{	//alert(record.get('activo'));	
-			
-	    	var paso=storeResRutas.getAt(rowIndex).get('objFin').nombre; // nombre estacion de paso	    	
-	    	return value.nombre + "->" + paso;
-	    	
-		}
-	    
+	   
+		
 	    var gridResRutas = new Ext.grid.GridPanel({
 	        store: storeResRutas,
 	        id:"G0",
+	        plugins	: summaryRes,
+          	
 	     //   hideHeaders: true,
 	        columns: [	                   
 	            {
@@ -2095,15 +2923,26 @@ Ext.onReady(function(){
 	            	width: 60, 
 	            	sortable: true, 
 	            	dataIndex: 'objInicio',
-	            	renderer:escribeTrayectoRes
+	            	renderer: escribeTrayectoRes,
+	            	summaryRenderer:escribeTrayectoRes
+	            	
+	            	
           		}
 	            ,
-	            {header: "Hora", width: 30, sortable: true, renderer:Ehora, dataIndex: 'hora'},
-	            {header: "Coste", width: 20, sortable: true, renderer: Coste, dataIndex: 'coste'},
-	            {header: "Distancia", width: 20, sortable: true, dataIndex: 'km', renderer: Km},
-	            {header: "Vehículo", width: 0, sortable: true, dataIndex: 'transporte',hidden:true}
-	            
+	            {header: "Hora", width: 30, sortable: true, renderer:Ehora, dataIndex: 'hora', summaryType: 'max',  summaryRenderer:Ehora},
+	            {header: "Coste", width: 20, sortable: true, renderer: CosteRes, dataIndex: 'coste', summaryType: 'sum',  summaryRenderer:sumCoste},
+	            {header: "Distancia", width: 20, sortable: true, dataIndex: 'km', renderer: Km, summaryType: 'sum',  summaryRenderer: Km},
+	            {header: "Vehículo", width: 0, sortable: true, dataIndex: 'transporte',hidden:true, summaryType: 'transport'},
+	            {header: "Coste_dia", width: 0, sortable: true, dataIndex: 'coste_dia',hidden:true, summaryType: 'cost'},
+	            {header: "Tipo_vehiculo", width: 0, sortable: true, dataIndex: 'tipo_vehiculo',hidden:true, summaryType: 'tipo'},
+	            {header: "Tonelaje_vehiculo", width: 0, sortable: true, dataIndex: 'tonelaje_vehiculo',hidden:true, summaryType: 'tonelaje'},
+	            {header: "Norma", width: 0, sortable: true, dataIndex: 'norma_vehiculo',hidden:true, summaryType: 'norma'},
+	            {header: "GroupIndex", width: 0, sortable: true, dataIndex: 'groupIndex',hidden:true},
+	          
+
+	          
 	        ],
+	       
 
 	        view: new Ext.grid.GroupingView({
 	        	id:'grupoRes',
@@ -2118,9 +2957,11 @@ Ext.onReady(function(){
 
 	        frame:true,
 	        width: 570,
-	        height: alto - 255,
+	        height: alto - 100,
 	        collapsible: false,
 	        animCollapse: false,
+	        //autoHeight:'auto',
+	       
 	        title: 'Cálculo',
 	        iconCls: 'icon-grid',
 	        tbar:[
@@ -2141,11 +2982,7 @@ Ext.onReady(function(){
 					iconCls:'iconExportar',				
 					handler: function() {
 	              
-					
-					//	var ruta = 'exportar_ruta.php?idRuta=' + rutaSeleccionada;
-					//	window.open(ruta,"_blank");
-						
-						//alert(rutaSeleccionada);
+				
 						
 						// enviamos por post con formulario el id de la ruta por seguridad						
 	   				     var form=Ext.getCmp('fExportar2').getForm();
@@ -2160,9 +2997,11 @@ Ext.onReady(function(){
 					     
 					 }
 					}
-				   
-	              ]
-	   
+				
+	            	
+	             ]
+
+	
 	    });
 	 
 	    
@@ -2172,28 +3011,54 @@ Ext.onReady(function(){
 	    // click de un paso a otro
 	    gridResRutas.on('rowclick', function(grid, rowIndex, columnIndex, e) { 
 	    	
+	    	var groupIndex = storeResRutas.getAt(rowIndex).get('groupIndex');
+	    	tipoV = storeResRutas.getAt(rowIndex).get('tipo_vehiculo');
+	    	tonelajeV = storeResRutas.getAt(rowIndex).get('tonelaje_vehiculo');
+	    	normaV = storeResRutas.getAt(rowIndex).get('norma_vehiculo');
+
 	        //console.log("Indice del store: " + rowIndex);
 	    	var inicio=storeResRutas.getAt(rowIndex).get('objInicio');
 	    	var fin=storeResRutas.getAt(rowIndex).get('objFin');
 	    	// en storeRutas.getAt(rowIndex).get('pasos'); se tiene array(lat,lon) con pasos intermedios
 	    	var pasos=storeResRutas.getAt(rowIndex).get('pasos');
+	    	zoomSection(inicio, fin,pasos);
+
+
+	    	var distance=storeResRutas.getAt(rowIndex).get('km');
+	    	var timeFinal=storeResRutas.getAt(rowIndex).get('hora');
+	    	var timeIni;
+	    	if(rowIndex > 0){
+	    		timeIni = storeResRutas.getAt(rowIndex -1).get('hora');
+	    	}
+	    	if(groupIndex == 0){
+	    		timeIni = hora_inicio;
+	    	}
+	   		getEco(distance, timeFinal, timeIni, tipoV, tonelajeV, normaV);
 	    	
-	    //	console.log(inicio);
-	   // 	console.log(fin);
-	   // 	console.log(pasos);
-	    	drawSection(inicio, fin,pasos);
 	    	     
 	    
 	    });
+
+	   
+	    
+
 	    
 	   // click en una ruta completa de un transporte
 	    gridResRutas.on('groupclick', function(grid, groupField, value, e) {
-	    	
+	    	var timeFinal;
+	    	var distance = 0;
 	    	var rutaT=new Array(); // se crea variable temporal que contendrá objetos de tipo estaciones que será el que se pase al metodo
 	    	                       // pintar ruta
 	    	var tmpRutaT=new Array();
 	    	// Se busca los records afectados por ese record(nombre transporte) del store de rutas	    	 
-	    	 var c1 = storeResRutas.queryBy(function(record,id) {      	    	 
+	    	 var c1 = storeResRutas.queryBy(function(record,id) { 
+	    	 	if(record.get('transporte')==value){
+			    	 timeFinal = record.get('hora');
+			    	 distance += record.get('km'); 
+			    	 tipoV = record.get('tipo_vehiculo');
+			    	 tonelajeV = record.get('tonelaje_vehiculo');
+			    	 normaV = record.get('norma_vehiculo'); 
+			     }  	    	 
     	         return record.get('transporte')==value;  
     	     }); 
 	    	 var tot=c1.length;
@@ -2210,17 +3075,18 @@ Ext.onReady(function(){
 	    				// si hay pasos(no estaciones) creamos objetos estaciones sin id para saber q es paso
 	    			{
 	    			   
-	    			   pasos=item.get('pasos');	    			   
+	    			   pasos=item.get('pasos');
+	    			   pasos = Ext.util.JSON.decode(pasos[0]);	    			   
 	    			   for(var i=0;i<pasos.length;i++)
 	    			   {
 	    				 
 	    			       	  // creamos el objeto estacion
 	    			       	  var estacion={
-	    			       			                   id_estaciones:0,
-	    			       			                   nombre:'',
-	    			       			                   lat: pasos[i].split(",")[0],
-	    			       			                   lon: pasos[i].split(",")[1]	    			       			                   
-	    			       	                        }
+       			                   id_estaciones:0,
+       			                   nombre:'',
+       			                   lat: pasos[i][1],
+       			                   lon: pasos[i][0]	    			       			                   
+       	                        }
 	    			       	 j++;  
 	    			       	 rutaT[j]=estacion;
 	    			       	 
@@ -2231,42 +3097,214 @@ Ext.onReady(function(){
 	    				
 	    				
 		    		 
-                    // Ahora se pasa un array de arrays, en cada posicion		    		 
-	    			 //rutaT[index]=item.get('objInicio');
-	    			// if(index==(tot-1)) rutaT[index+1]=item.get('objFin');	    			  
+                    	    			  
 	    			 
 	    		 },this);
 	    	 }
-    	     // console.log(rutaT);		    	 
-	    	 // Pasamos un array de estaciones para pintar la ruta completa (tanto estaciones como pasos en orden)
-	    	 // Las estaciones llegan un id,nombre en el objeto estaciones y los pasos con id=0 y nombre vacio
-    	    drawRoute(rutaT);
+
+    	    zoomRoute(rutaT);
+
+    	    getEco(distance, timeFinal, hora_inicio, tipoV, tonelajeV, normaV);
 	    		
        });
 	    
 	    
-	    // Panel del tab Estaciones
-	    var PResRutas = new Ext.Panel({  	         	          
-	        monitorResize: true ,
-	        layout: 'fit', // para ajustar a todo el tamaño del panel	      	               
-	        items: [gridResRutas]          
-	        
-	    });
-	    
-	    // Al inicio este panel está vacio
-	   PResRutas.hide();
+	   
 	   
 	    
 	    
     //*****************************************************//	  
 	//****************** FIN HISTORICO DE RUTAS***********//
-	//*****************************************************//	    
+	//*****************************************************//	
+
+
+	 //*****************************************************//	  
+	//****************** ECOCOSTES***********//
+	//*****************************************************//
+
+	     var readerEco = new Ext.data.JsonReader({	        
+	    	root : 'data',
+	     //	autoLoad: false,
+	    //    idProperty: 'idtransporte',
+	        totalProperty: 'count',	        
+	        fields: [
+	            
+						{name: 'combustible',mapping: 'combustible',type: 'float'},
+						{name: 'co2',mapping: 'co2',type: 'float'},
+						{name: 'ch4',mapping: 'ch4', type: 'float'},
+						{name: 'nox',mapping: 'nox', type: 'float'},
+						{name: 'cov',mapping: 'cov', type: 'float'},	       
+						{name: 'co',mapping: 'co',type: 'float'},
+						{name: 'pm',mapping: 'pm',type: 'float'},
+						{name: 'nmcov',mapping: 'nmcov',type: 'float'}
+					
+	        ]
+	    });
+
+	    var storeEcocostes = new Ext.data.GroupingStore({	    	   
+            reader: readerEco,	      	     	         
+           
+
+        });
+
+ 		function renderValue(value){
+ 				value = value.toFixed(2);
+ 				return value + ' g';
+ 		}
+	    	
+	     var panelResEco = new Ext.grid.GridPanel({		
+			store: storeEcocostes,						
+			frame:true,
+	        width: 570,
+	        height:alto -300,
+	        bottom: 0,
+	        border: false,
+	        bodyBorder:false,
+	        stripeRows: true,
+	        title: 'Impacto ambiental',
+			region: 'south',
+			columns: [	                   
+	          
+	            {id: 'coste', header: "Combustible", width: 75, sortable: true, renderer:renderValue, dataIndex: 'combustible'},
+	            {header: "CO2", width: 75, sortable: true, renderer: renderValue, dataIndex: 'co2'},
+	            {header: "CH4", width: 68, sortable: true, dataIndex: 'ch4', renderer: renderValue},
+	            {header: "NOX", width: 68, sortable: true, renderer:renderValue, dataIndex: 'nox'},
+	            {header: "COV", width: 68, sortable: true, renderer: renderValue, dataIndex: 'cov'},
+	            {header: "CO", width: 68, sortable: true, dataIndex: 'co', renderer: renderValue},
+	            {header: "PM", width: 68, sortable: true, renderer: renderValue, dataIndex: 'pm'},
+	            {header: "NMCOV", width: 68, sortable: true, dataIndex: 'nmcov', renderer: renderValue}
+	            
+
+	          
+	        ],			
+											
+		});
+
+		var panelEco = new Ext.grid.GridPanel({		
+			store: storeEcocostes,						
+			frame:true,
+	        width: 570,
+	        height:alto -300,
+	        bottom: 0,
+	        border: false,
+	        bodyBorder:false,
+	        stripeRows: true,
+	        title: 'Impacto ambiental',
+			region: 'south',
+			columns: [	                   
+	          
+	            {id: 'coste', header: "Combustible", width: 75, sortable: true, renderer:renderValue, dataIndex: 'combustible'},
+	            {header: "CO2", width: 75, sortable: true, renderer: renderValue, dataIndex: 'co2'},
+	            {header: "CH4", width: 68, sortable: true, dataIndex: 'ch4', renderer: renderValue},
+	            {header: "NOX", width: 68, sortable: true, renderer:renderValue, dataIndex: 'nox'},
+	            {header: "COV", width: 68, sortable: true, renderer: renderValue, dataIndex: 'cov'},
+	            {header: "CO", width: 68, sortable: true, dataIndex: 'co', renderer: renderValue},
+	            {header: "PM", width: 68, sortable: true, renderer: renderValue, dataIndex: 'pm'},
+	            {header: "NMCOV", width: 68, sortable: true, dataIndex: 'nmcov', renderer: renderValue}
+	            
+
+	          
+	        ],			
+											
+		});
+	   
+	  
+
+	  function getEco(distance, timeFinal, timeIni, tipoV, tonelajeV, norma){
+	  	timeFinal = Date.parse(timeFinal);
+	  	timeIni = Date.parse(timeIni);
+	  	var horas = timeFinal -timeIni;
+	  	horas = (((horas/1000)/60)/60);
+	  	var velo = distance / horas;
+	  	console.log(velo);
+
+	  	var params = {
+	  		   "cantidad":"1",
+			   "carga":"100",
+			   "norma":norma,
+			   "pendiente":"0%",
+			   "tonelaje":tonelajeV,
+			   "vehiculoCodigo":tipoV,
+			   "velocidad": velo,
+			   "urbana":"0",
+			   "rural":"0",
+			   "highway":"0"	  
+	  	}
+
+	  	var typeVia;
+	  	if(velo <= 50){
+	  		params['urbana'] = distance;
+	  	}
+	  	else if (velo >50 && velo <= 80){
+	  		params['rural'] = distance;
+	  	}
+	  	else if (velo > 80){
+	  		params['highway'] = distance;
+	  	}
+
+	    Ext.Ajax.request({
+    	    	  url: 'ecocostes.php',
+    	    	  jsonData: Ext.util.JSON.encode(params),
+    	    	  success: function(action) 
+    	    	  { 
+    	    	  	obj = Ext.util.JSON.decode(action.responseText);
+    	    		  if(obj.success)
+    	    		  {
+    	    		  	var datosJson = {
+    	    		  		count: obj.datos.data.length,
+    	    		  		data: obj.datos.data
+    	    		  	}
+    	    		  	storeEcocostes.loadData(datosJson);
+    	    		  }
+    	    		  else
+	    	    		  {
+	    	    			  if(obj.errores.razon=='false') // usuario no logeado
+	                          {	                            	
+	                         	 desconectar();
+	                          }
+	                          else
+	                          {
+	                          Ext.Msg.show({
+	                              title:'Aviso',
+	                              msg:obj.errores.razon,
+	                              buttons: Ext.Msg.OK,
+	                              icon: Ext.Msg.WARNING
+	                           });
+	                          }    
+	    	    		  }
+    	    	  },
+    	    	   failure:function(){ 
+                        
+                             falloServidor();	
+                             
+                   
+                  }, scope:this 
+	    });
+
+
+
+	  }
+
+	 //*****************************************************//	  
+	//****************** FIN ECOCOSTES***********//
+	//*****************************************************//    
 		    
 	    
 	    
 	//*****************************************************//
     //**************** PANELES GENERALES *****************//
 	//*****************************************************//
+
+	 // Panel del tab Estaciones
+	    var PResRutas = new Ext.Panel({  	         	          
+	        monitorResize: true ,
+	        layout: 'fit', // para ajustar a todo el tamaño del panel	      	               
+	        items: [gridResRutas, panelResEco]          
+	        
+	    });
+	    
+	    // Al inicio este panel está vacio
+	   PResRutas.hide();
 	  
 	  // Panel del tab Estaciones
 	    var estaciones = new Ext.Panel({  
@@ -2361,7 +3399,11 @@ Ext.onReady(function(){
 	            	handler: importarEs
 	               }
 	        ]
+	       
 	    });
+
+
+
 	 // Panel del tab transportes
 	    var transportes = new Ext.Panel({  
 	        title:'Transportes', 
@@ -2460,14 +3502,16 @@ Ext.onReady(function(){
 	    
 	    // Panel del tab Rutas
 	       var rutas = new Ext.Panel({  
-	           title:'Calcular Rutas',  
+	           title:'Calcular Rutas', 
+	           id: 'calculo', 
 	           iconCls: 'iconResultados',
 	           autoHeight:'auto',
-	          items:[FormCalcRuta,gridRuta]  
+	          items:[FormCalcRuta,gridRuta, panelEco]  
 	       });
 	    // Panel del tab Resultados
 	       var resultados = new Ext.Panel({  
-	           title:'Rutas Almacenadas',  	           
+	           title:'Rutas Almacenadas',
+	           id: 'rutas',           
 	           iconCls: 'iconRutas',
 	           items:[PResFechas,PResRutas]  
 	       });
@@ -2504,28 +3548,143 @@ Ext.onReady(function(){
 	   		renderTo: 'content',
 	   		items :   [mapPanel,control]
 	   	});
+
+
 	       
 	   // activacion del tab de transportes
 	   Ext.getCmp('transportes').on("activate",function(){
-	 	    	// Necesario para que al editar un transporte, la estación de inicio y fin 
-	 	    	// salga su nombre y no su id en el combo
-	 	    	//store1.load();
-	 	    	//store2.load();
-	 	    //	storeUt.reload();
-	 	       console.log("Borrado de mascaras en mapa");
-	 	       cleanRoutes();	 	       
+	       
 		       gridUt.getView().refresh();
+
 	 	    });
+
+	    Ext.getCmp('calculo').on("activate",function(){
+	       	gridRuta.hide();
+		      panelEco.hide();
+
+	 	  });
+
+	   Ext.getCmp('rutas').on("activate",function(){
+	   	 PResRutas.hide();
+	   		gridResRutas.hide();
+	   		panelEco.store.clearData();
+
+	   		if(map){
+	  	    	map.setView(center, zoom);
+	  	    	map.fire('resize');
+	  	    }
+	   		
+	   });
+	   
 	 	    
 	  Ext.getCmp('estaciones').on("activate",function(){
-	  	       console.log("Borrado de mascaras en mapa");	 	    
-	 	       cleanRoutes();		       
-		    });      
+
+	  	      if(map){
+	  	      	map.setView(center, zoom);
+	  	      	map.fire('resize');
+	  	      	if(vector && vector._map){
+		  	      	vector.onRemove(map);
+		  	    }
+      			cleanRoutes();
+
+      			gridRuta.hide();
+			    markers.deleteTree = true;
+
+				map.removeLayer(markers);
+				markers =  new SMC.layers.markers.MarkerLayer({
+					label: 'Estaciones actuales',
+					stylesheet: stylesheetStations
+				});
+				markers.load = function(){
+
+					$.ajax({
+						type: "GET",
+						url: 'consulta_estaciones.php',
+						success: function(response){
+							var features = response.data;
+							for(var f in features){
+								features[f] = {
+									type: 'Feature',
+									id: features[f].id_estaciones,
+									geometry:{
+										type: 'Point',
+										coordinates:[features[f].lon, features[f].lat]
+									},
+									properties:{
+										nombre: features[f].nombre,
+										activo: features[f].activo,
+										direccion: features[f].direccion
+									}
+									
+								}
+							}
+							markers.addMarkerFromFeature(features);
+						}
+					})
+				}
+			    map.addLayer(markers);
+			}	       
+	}); 
+
+ 
 	      
 	  //*****************************************************//
 	    //**************** FIN PANELES GENERALES *****************//
 		//*****************************************************// 
    
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+//++++++++++++++++++++++++CREATE VISOR SMC+++++++++++++++++++++++++++++++++++++++//
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+        map = SMC.map('map');
+        var zoom = 12;
+        var center = new L.LatLng(37.383333, -5.983333);
+	    map.setView(center, zoom);
+	    // Add base layer from OSM
+	    var base = SMC.tileLayer({
+	        url: 'http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+			maxZoom: 18
+		}).addTo(map);
+
+		var baseLayer = {
+	        "OpenStreetMap": base
+	    };
+
+
+	    var leyenda = SMC.layerTreeControl(baseLayer, {
+	        collapsed: false
+	    }).addTo(map);
+	  
+	
+		markers.load = function(){
+			$.ajax({
+				type: "GET",
+				url: 'consulta_estaciones.php',
+				success: function(response){
+					var features = response.data;
+					for(var f in features){
+						features[f] = {
+							type: 'Feature',
+							id: features[f].id_estaciones,
+							geometry:{
+								type: 'Point',
+								coordinates:[features[f].lon, features[f].lat]
+							},
+							properties:{
+								nombre: features[f].nombre,
+								activo: features[f].activo,
+								direccion: features[f].direccion
+							}
+							
+						}
+					}
+					markers.addMarkerFromFeature(features);
+				}
+			})
+		}
+	    map.addLayer(markers);
+
+	    
 
 
     
@@ -2533,19 +3692,6 @@ Ext.onReady(function(){
 }); // FIN DE Ext.onReady
 
 
-//functiones para redimensionar el mapa
-function mapSizeUp() {
-    var size = mapPanel.getSize();
-    size.width += 40;
-    size.height += 40;
-    mapPanel.setSize(size);
-}
-function mapSizeDown() {
-    var size = mapPanel.getSize();
-    size.width -= 40;
-    size.height -= 40;
-    mapPanel.setSize(size);
-}
 
 //*************************************************
 //			Controladores del Mapa
@@ -2554,127 +3700,42 @@ function mapSizeDown() {
 //Registra un punto sobre el mapa con el icono que se pasa como parámetro.
 function registerPoint(map, icon) {
     changeIconType(icon);
-    map.events.register('click', map, function(e) {
-        var xys = map.getLonLatFromViewPortPx(e.xy);
+
+    map.on('click', function(e) {
+        
         if(markerClick) {
+        	
         	if(markerClick.popup) {
     			map.removePopup(markerClick.popup);
     		}
-        	markerClick.lonlat = xys;
-        	markers.redraw();
+        	markerClick.setLatLng(e.latlng);
+
+        	//markers.redraw();
         } else {
-        	markerClick = new OpenLayers.Marker(xys,actualIcon);
-        	markers.addMarker(markerClick);
+        	markerClick = new L.Marker(e.latlng,{
+        		icon: actualIcon
+        	});
+        	markerClick.id='';
+        	
         }
 //        creaElementosMapa(markerClick);
-        showAddress(markerClick);
+		showAddress(markerClick);
+		markerClick.addTo(map);
+        
     });
 }
 
-function showMarker(lon, lat, dir) {
-	var lonLat = new OpenLayers.LonLat(lon, lat);
-	lonLat.transform(
-			projGoogle, // de WGS 1984
-			map.getProjection());
-	
-	if(markerClick) {
-		if(markerClick.popup) {
-			map.removePopup(markerClick.popup);
-		} 
-		markerClick.lonlat = lonLat;
-		markerClick.direccion = dir;
-		markers.redraw();
-	} else {
-		markerClick = new OpenLayers.Marker(lonLat, iconStation);
-		
-		markers.addMarker(markerClick);
-		registerMoseOverMark(markerClick);
-	}
-	
-	map.setCenter(lonLat, 15)
-}
 
-//Elimina un punto del mapa.
-function unRegisterPoint(map) {
-    map.events.unregister('click', map, registerClick);
-}
 
-//Función que se encarga de manejar los clicks sobre el mapa.
-function registerClick(e) {
-    var xys = map.getLonLatFromViewPortPx(e.xy);
-    if(markerClick) {
-    	markerClick.lonlat = xys;
-    } else {
-    	markerClick = new OpenLayers.Marker(xys,actualIcon);
-    }
-//    creaElementosMapa(markerClick);
-    markers.addMarker(markerClick);
-    showAddress(markerClick);
-}
 
-function creaElementosMapa(marker) {
-    markers.addMarker(marker);
-    marker.id = arrMarkers.length;
-    arrMarkers[arrMarkers.length] = marker;
-	//marker.point = new OpenLayers.Geometry.Point(marker.lonlat.lon, marker.lonlat.lat);
-}
+
 
 //Función que cambia el icono actual de las marcas por el que se pasa como parámetro.
 function changeIconType(icon) {
     actualIcon = icon;
 }
 
-//Función encargada de registrar los clicks sobre las marcas del mapa y mostrar un popup informativo.
-function registerMoseOverMark(marker) {
-	var lonLatFormated = new OpenLayers.LonLat(marker.lonlat.lon, marker.lonlat.lat);
-	lonLatFormated.transform(map.getProjection(), projGoogle);
-    marker.events.register('click', marker, function() {
-    	if(marker.popup) {
-    		map.removePopup(marker.popup);
-    		marker.popup.destroy();
-    	}
-		var popup = new OpenLayers.Popup.FramedCloud(marker.id,
-				marker.lonlat,
-				null,
-				'<div style="width:250px;">'
-				+ '<div><h3>' + marker.direccion + '<h3></div>'
-				+ '<br /><div style:"padding-top:30px;>Lon: ' + lonLatFormated.lat + '<br />Lat: ' + lonLatFormated.lon + '</div>'
-				//+ '<div style:"padding-top:20px; font-size: 10px;"><a href="javascript:removeMP(' + marker.id + ');">Eliminar</a></div>'
-				//+ '</div>'
-				,
-				null,
-				true
-		);
-		map.addPopup(popup);
-		marker.popup = popup;
-    	
-    });
-    
-}
 
-//Función encargada de eliminar una marca del mapa.
-/*function removeMP(idM) {
-    markers.removeMarker(arrMarkers[idM]);
-    arrMarkers[idM].popup.destroy();
-    arrMarkers[idM].destroy();
-    arrMarkers[idM] = null;
-}*/
-
-function removeMP(marker) {
-	marker.popup.destroy();
-	marker.destroy();
-}
-
-//Función que elimina todas las marcas actuales del mapa.
-function limpiarMapa() {
-    for (var i = 0; i < arrMarkers.length; i++) {
-        if(arrMarkers[i] != null) {
-            markers.removeMarker(arrMarkers[i]);
-            arrMarkers[i].destroy();
-        }
-    }
-    arrMarkers = [];
-}
 
 /**
  * GEOCODER
@@ -2688,23 +3749,23 @@ function showAddress(markerIn) {
 	if (geocoder) {
 	
 		if (markerIn) { //si queremos una dirección a partir de unas coordenadas cartográficas
-			var latlongFormatGoogle = new OpenLayers.LonLat(markerIn.lonlat.lon, markerIn.lonlat.lat); 
-			latlongFormatGoogle.transform(map.getProjectionObject(), projGoogle);
+			var latlongFormatGoogle = markerIn._latlng; 
+			//latlongFormatGoogle.transform(map.getProjectionObject(), projGoogle);
 			
-			var locationGMaps = new google.maps.LatLng(latlongFormatGoogle.lat, latlongFormatGoogle.lon);
+			var locationGMaps = new google.maps.LatLng(latlongFormatGoogle.lat, latlongFormatGoogle.lng);
 			geocoder.geocode({ 'latLng': locationGMaps}, function(points, status) {
 				try {
 					markerIn.direccion = points[0].formatted_address;
 					//Actualizamos los campos de la ventana para añadir una estación
 			        Ext.getCmp('direccion').setValue(points[0].formatted_address);
-			        Ext.getCmp('lon').setValue(latlongFormatGoogle.lon);
+			        Ext.getCmp('lon').setValue(latlongFormatGoogle.lng);
 			        Ext.getCmp('lat').setValue(latlongFormatGoogle.lat);
 				} catch (e) {
 
 				}	
 			});
 			
-			registerMoseOverMark(markerIn);
+			//registerMoseOverMark(markerIn);
 			
 		} else if (Ext.getCmp('direccionMapa').getValue()) { //si queremos unas coordenadas a partir de una dirección
 			geocoder.geocode({ 'address': Ext.getCmp('direccionMapa').getValue()}, function(points, status) {
@@ -2713,10 +3774,10 @@ function showAddress(markerIn) {
 					return;
 				} else {
 					
-					var centerPoint = new OpenLayers.LonLat(points[0].geometry.location.lng(), 
-						points[0].geometry.location.lat());
+					var centerPoint = new L.LatLng(points[0].geometry.location.lat(), 
+						points[0].geometry.location.lng());
 						
-					map.setCenter(centerPoint.transform(projGoogle, map.getProjectionObject()), 15);
+					map.setView(centerPoint, 15);
 				}
 			});
 		}
@@ -2726,104 +3787,178 @@ function showAddress(markerIn) {
 
 //CÁLCULO DE RUTAS
 
-var markersArray = [];
+
 var pointArray = [];
 
-function drawSection(startStation, endStation, pasos) {
-	rutaParcial.removeAllFeatures();
+
+
+function zoomSection(startStation, endStation, pasos) {
 	
-	var style = { 
-			  strokeColor: 'red', 
-			  strokeOpacity: 1,
-			  strokeWidth: 6
-			};
 	
-	var pointStart = new OpenLayers.Geometry.Point(startStation.lon, startStation.lat);
-	var pointEnd = new OpenLayers.Geometry.Point(endStation.lon, endStation.lat);
-	
-//	var line = new OpenLayers.Geometry.LineString([pointStart, pointEnd]);
+	var pointStart = new L.LatLng(startStation.lat, startStation.lon);
+	var pointEnd = new L.LatLng(endStation.lat, endStation.lon);
 	
 	var arrPoints = [];
-	arrPoints.push(pointStart.transform(projGoogle, map.getProjectionObject()));
+	arrPoints.push(pointStart);
+	pasos = Ext.util.JSON.decode(pasos[0]); 
 	for ( var i = 0; i < pasos.length; i++) {
-		var pointPaso = new OpenLayers.Geometry.Point(pasos[i].split(",")[1], pasos[i].split(",")[0]);
-		arrPoints.push(pointPaso.transform(projGoogle, map.getProjectionObject()));
+		var pointPaso = new L.LatLng(pasos[i][1], pasos[i][0]);
+		arrPoints.push(pointPaso);
 	}
-	arrPoints.push(pointEnd.transform(projGoogle, map.getProjectionObject()));
+	arrPoints.push(pointEnd);
+	if(!vector || !vector._map){
+	vector = new L.Polyline(arrPoints, vectorSelected).addTo(map);
+	}
+	else{
+		vector.setLatLngs(arrPoints);
+	}
+
+	var stationsMarkers = markers.noClusterGroup.getLayers();
+	var features = [];
+	for(var m=0; m < stationsMarkers.length; m++){
+		if(stationsMarkers[m].feature.id == startStation.id_estaciones){
+			stationsMarkers[m].feature.properties.tipo = 'Origen';		
+		}
+		else if(stationsMarkers[m].feature.id == endStation.id_estaciones){
+			stationsMarkers[m].feature.properties.tipo= 'Destino';		
+		}
+		else{
+			stationsMarkers[m].feature.properties.tipo = 'Parada';
+		}
+		features[m] = stationsMarkers[m].feature;
+
+	}
+	markers.unload();
+	markers.load = function(){
+		markers.addMarkerFromFeature(features);
+	}
+	markers.load();
 	
-	var line = new OpenLayers.Geometry.LineString(arrPoints);
-	var lineFeature = new OpenLayers.Feature.Vector(line, null, style);
-	rutaParcial.addFeatures([lineFeature]);
-	rutaParcial.redraw();
+	var bbox = new L.LatLngBounds(arrPoints);
+	map.fitBounds(bbox);
+	map.fire('resize');
 	
 }
 
-var vectorStyle = { 
-		  strokeColor: '#0000ff', 
-		  strokeOpacity: 0.5,
-		  strokeWidth: 5
-		};
 
-function drawRoute(stations) {
+
+function drawRoute(datosJson) {
 	
-	var lonLat;
-	var marker;
-	var point;
-	var line;
-	var lineFeature;
-	
-	ruta.removeAllFeatures();
+	 var routes = {};
+	 var datos = datosJson.datos;
 
-	for ( var i = 0; i < stations.length; i++) {
+	 for(var d = 0; d < datos.length; d++){
+	 	if(!routes[datos[d].transporte]){
+	 		routes[datos[d].transporte] = {};
+	 		routes[datos[d].transporte].coordinates = [];
+	 		routes[datos[d].transporte].datos = [];
+	 	}
+	 		var geom = datos[d].pasos;
+	 		pasos = Ext.util.JSON.decode(geom[0]);
+	 		for(var p= 0; p < pasos.length; p++){
+	 			routes[datos[d].transporte].coordinates.push(pasos[p]);
+	 		}
 
-		if(stations[i].id_estaciones != 0) {
+	 		routes[datos[d].transporte].datos.push(datos[d]);
+	 	
+	 }
 
-			var p = new OpenLayers.LonLat(stations[i].lon, stations[i].lat);
-			p.transform(projGoogle, map.getProjectionObject());
-			marker = new OpenLayers.Marker(p, iconStation.clone());
-			markers.addMarker(marker);
-			marker.direccion = stations[i].direccion;
-	//		registerMoseOverMark(marker);
-			showAddress(marker);
-			
-			markersArray.push(marker);
-			
-			point = new OpenLayers.Geometry.Point(stations[i].lon, stations[i].lat);
-			pointArray.push(point.transform(projGoogle, map.getProjectionObject()));
-		} else {
-			pointArray.push(new OpenLayers.Geometry.Point(stations[i].lon, stations[i].lat).transform(projGoogle, map.getProjectionObject()));
-		}
+	ruta.addTo(map);
+    cleanRoutes();
+
+	var listColor = new Array(Object.keys(routes).length);
+	  
+	 var c = 0;
+	 for(var ut = 0; ut < Object.keys(routes).length; ut++, c++){
+	  	 if(ut > optionColor.length-1){
+	  	 	c= 0;
+	  	 }
+	  	 listColor[ut] = optionColor[c];
+	 }
+
+	var i = 0;
+
+	for(var r in  routes){
+	 	var feature = {};
+	 	feature.properties={'name':r};
+	 	feature.geometry = {
+	 		type: 'LineString',
+	 		coordinates: routes[r].coordinates
+	 	}
+	 	var color = listColor[i];
+	 	var stylesheet ='*[name="'+r+'"]{color: "'+color+'";}';
+	 	options={
+	 		stylesheet: stylesheet,
+	 		label:'Ruta del '+r
+	 	};
+	 	var layer = new SMC.layers.geometry.GeometryLayer(options);
+	 	layer.addTo(ruta);
+	 	layer.addGeometryFromFeatures(feature);
+	 	i++;
+	 	
 	}
-	markers.redraw();
+
+	 map.fire('resize');	
+
+
+}
+
+function zoomRoute(stations) {
+
+	var line, bbox, origin, target;;
+
+	pointArray = [];
+	for ( var i = 0; i < stations.length; i++) {
+		pointArray.push( new L.LatLng(stations[i].lat, stations[i].lon));
+		origin = stations[0].id_estaciones;
+		target = stations[stations.length-1].id_estaciones;
+	}
+	if(!vector || !vector._map){
+		vector = new L.Polyline(pointArray, vectorSelected).addTo(map);
+	}
+	else{
+		vector.setLatLngs(pointArray);
+	}
+
+	var stationsMarkers = markers.noClusterGroup.getLayers();
+	var features = [];
+	for(var m=0; m < stationsMarkers.length; m++){
+		if(stationsMarkers[m].feature.id == origin){
+			stationsMarkers[m].feature.properties.tipo = 'Origen';		
+		}
+		else if(stationsMarkers[m].feature.id == target){
+			stationsMarkers[m].feature.properties.tipo = 'Destino';		
+		}
+		else{
+			stationsMarkers[m].feature.properties.tipo = 'Parada';
+		}
+		features[m] = stationsMarkers[m].feature;
+
+	}
+	markers.unload();
 	
-	line = new OpenLayers.Geometry.LineString(pointArray);
-	lineFeature = new OpenLayers.Feature.Vector(line, null, vectorStyle);
+	markers.load = function(){
+		markers.addMarkerFromFeature(features);
+	}
+	markers.load();
 	
-	ruta.addFeatures([lineFeature]);	
-	ruta.redraw();
-//	ruta.addFeatures(createDirection(line,'middle',true));
+	bbox = new L.LatLngBounds(pointArray);
+	map.fitBounds(bbox);
+	map.fire('resize');
+	
+	
+
 
 }
 
 function cleanRoutes() {
-	markers.destroy();
-	createMarkers();
-	ruta.removeAllFeatures();
-	rutaParcial.removeAllFeatures();
-}
-
-function cleanLayers() {
-	markers.destroy();
-	
-	for ( var i = 0; i < markersArray.length; i++) {
-		if (markersArray[i].popup) {
-			map.removePopup(markersArray[i].popup);
-		}
+	var layers = ruta._layers;
+	for(var l in layers){
+		layers[l].deleteTree = true;
+		map.removeLayer(layers[l]);
 	}
+	ruta.clearLayers();
 }
 
-function createMarkers() {
-	markers = new OpenLayers.Layer.Markers( "Markers" );
-	map.addLayer(markers);
-	
-}
+
+

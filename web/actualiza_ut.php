@@ -16,7 +16,7 @@ else {
    foreach($_POST as $k=>$v)    $$k=trim(strip_tags($v)); 
    $idUser=$_SESSION['IDUSER'];
    $idT=$id_transportes;
-   $datos=array('nombre'=>$nombre,'estacionInicio'=>$estacionInicio,'estacionFin'=>$estacionFin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo,'idUser'=>$idUser);
+   $datos=array('nombre'=>$nombre,'estacionInicio'=>$estacionInicio,'estacionFin'=>$estacionFin,'costeXkm'=>$coste_x_km,'costeXdia'=>$coste_x_dia,'activo'=>$activo, 'tipo'=>$tipo, 'tonelaje'=>$tonelaje, 'norma'=> $norma, 'idUser'=>$idUser);
    $ut=new Ut();
    $ut->edit($idT,$datos);    
 }

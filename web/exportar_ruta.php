@@ -17,11 +17,15 @@ $idUser=$_SESSION['IDUSER'];
 // creamos el pdf
 $ruta=new Rutas();
 $respuesta=array();
+
+
 if(isset($_POST['idRuta']))
 {
+
   $id=intval($_POST['idRuta']*1);
   $respuesta=$ruta->getTrayectosTramos($id,$idUser);  
 } 
+//var_dump($respuesta);
 if(count($respuesta)>0)
 {
 	$fecha=$respuesta[0];

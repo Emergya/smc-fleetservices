@@ -14,7 +14,7 @@ if(!isset($_SESSION['IDUSER']))
 else {
    foreach($_POST as $k=>$v)     $$k=trim(strip_tags($v)); 
    $idUser=$_SESSION['IDUSER'];
-   $datos=array('nombre'=>$nombre,'estacionInicio'=>$estacionInicio,'estacionFin'=>$estacionFin,'costeXkm'=>$costeXkm,'costeXdia'=>$costeXdia,'activo'=>$activo,'idUser'=>$idUser);        
+   $datos=array('nombre'=>$nombre,'estacionInicio'=>$estacionInicio,'estacionFin'=>$estacionFin,'costeXkm'=>$costeXkm,'costeXdia'=>$costeXdia,'activo'=>$activo, 'tipo'=>$tipo, 'tonelaje'=>$tonelaje, 'norma'=>$norma, 'idUser'=>$idUser);        
    $ut=new Ut();
    $res=$ut->add($datos);	      
    $datosD = json_decode($res,true);
